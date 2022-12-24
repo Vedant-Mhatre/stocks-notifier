@@ -1,5 +1,8 @@
 # NSE Stocks Notifier
 
+## Update
+It was observed that python was little bit slow and was also using a lot of memory, hence this project is being migrated to golang.
+
 ## About
 This script tracks real-time stock prices for a list of NSE stocks and sends notifications when certain criteria are met. This is designed to run from 9:30 am to 3pm on all weekdays and it automatically sleeps on all other times. It check price every 10 minutes and alerts if price of stock mentioned in [stocks.json](https://github.com/Vedant-Mhatre/nse-stocks-notifier/blob/main/stocks.json) is less than or equal to real time value of that stock.
 
