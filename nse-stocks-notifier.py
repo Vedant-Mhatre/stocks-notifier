@@ -1,5 +1,10 @@
+import psutil
+
+# Start measuring CPU and memory usage
+process = psutil.Process()
+
 # Import the necessary modules
-from nsepy import get_quote
+from yfinance import Ticker
 import time
 import os
 import datetime
@@ -12,11 +17,10 @@ logger = logging.getLogger(__name__)
 
 def check_ist_day_and_time():
   # Get the current day and time in IST
-  current_day = datetime.datetime.now(datetime.timezone.utc).astimezone().strftime("%A")
-  current_time = datetime.datetime.now(datetime.timezone.utc).astimezone().strftime("%H:%M")
+  current_time = datetime.datetime.now(datetime.timezone.utc).astimezone()
 
   # Check if it's a weekday and the time is between 9:30am and 3pm, Indian stock market is active from 9:15 am to 3:30 pm, this script is designed to run only from 9:30 am to 3pm.
-  if current_day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] and "09:30" <= current_time <= "15:00":
+  if current_time.weekday() in range(0, 5) and "09:00" <= current_time.strftime("%H:%M") <= "15:30":
     return True
   else:
     return False
@@ -26,10 +30,10 @@ def sleep_until_market_opens():
     # Get the current time
     now = datetime.datetime.now()
     
-    # If it's Saturday or Sunday, it will calculate time until next monday's 9:30 am.
+    # If it's Saturday or Sunday, it will calculate time until next monday's 9:15 am.
     if now.weekday() in [5, 6]: # Saturday or Sunday
-        # Calculate the number of seconds until the next Monday at 9:30 am
-        next_monday = (7 - now.weekday()) * 24 * 60 * 60 + 9 * 60 * 60 + 30 * 60
+        # Calculate the number of seconds until the next Monday at 9 am
+        next_monday = (7 - now.weekday()) * 24 * 60 * 60 + 9 * 60 * 60 + 15 * 60
         # Sleep for the calculated number of seconds
         logger.info("Sleeping until next monday")
         time.sleep(next_monday)
@@ -37,7 +41,7 @@ def sleep_until_market_opens():
 
     # If it's a weekday, it will calculate time until next day's 9:30 am.
     # Set the target time to be 9:30 am
-    target_time = now.replace(hour=9, minute=30, second=0, microsecond=0)
+    target_time = now.replace(hour=9, minute=15, second=0, microsecond=0)
 
     # If the current time is after 3:00 pm, set the target time to be tomorrow
     if now.hour >= 15:
@@ -70,14 +74,14 @@ def read_json_data(filename):
 def getStockPrice(stockName):
     try:
         # Get stock info for the given stock name
-        stock_info = get_quote(stockName)
+        stock_price = float(Ticker(stockName + ".NS").info['currentPrice'])
 
         # Extract the lastPrice field from the returned data
         # If the field is missing or has an invalid value, use a default value of 0
-        stock_price = stock_info.get("data", [{}])[0].get("lastPrice", 0)
+        # stock_price = stock_info.get("data", [{}])[0].get("lastPrice", 0)
 
         # Convert the stock price to a floating-point number
-        stock_price = float(stock_price.replace(",", ""))
+        # stock_price = float(stock_price.replace(",", ""))
 
         return stock_price
     except (KeyError, IndexError):
@@ -92,7 +96,7 @@ def getStockPrice(stockName):
 if __name__ == "__main__":
     while True:
         # Check if it is a weekday between 9:30am and 3pm in IST
-        if check_ist_day_and_time():
+        if not check_ist_day_and_time():
             # Read the stocks data from the stocks.json file
             # This file can be updated without stopping the python process.
             stocks = {}
@@ -115,16 +119,27 @@ if __name__ == "__main__":
 
                     # If the stock price is invalid, create a notification
                     if stock_price == 0:
-                        notify("Stock price alert", f"Error, couldn't find price of stock: {stock}")
+                        notify("Stock price alert", f"Error, could not find price of {stock} ")
                     # If the stock price is less than the alert price, create a notification
                     elif stock_price <= price:
-                        notify("Stock price alert", f"{stock} stock price is less than {price}")
+                        notify("Stock price alert", f"{stock} stock price is less than {price} at {stock_price}")
                 except Exception as e:
                     # Handle any exceptions that may occur
                     logger.critical(f"Cannot get stock info for {stock} because of exception: {e}")
             # Sleep for 10 minutes before checking stock prices again
+            break
             time.sleep(600)
         else:
             # If it is not a weekday between 9:30am and 3pm in IST, log and sleep until the market opens
             logger.info("Market has closed")
-            sleep_until_market_opens()
+            break
+            # sleep_until_market_opens()
+
+# Get the CPU usage (in percent)
+cpu_usage = process.cpu_percent()
+
+# Get the memory usage (in bytes)
+memory_usage = process.memory_info().rss
+
+print(f"CPU usage: {cpu_usage}%")
+print(f"Memory usage: {memory_usage/ (1024 ** 2)} megaytes")
