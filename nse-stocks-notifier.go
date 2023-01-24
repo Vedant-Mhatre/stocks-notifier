@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"runtime"
@@ -66,6 +67,7 @@ func readJSONData(filename string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("invalid JSON data: %v", err)
 	}
 
+	log.Print(data)
 	return data, nil
 }
 
@@ -137,13 +139,13 @@ func main() {
 		directoryPathHelpMessage()
 	}
 
-	var stocks map[string]interface{}
-	stocks, err := readJSONData(dir + "/stocks.json")
-	if err != nil {
-		notifyError(err)
-	}
-
 	for {
+		var stocks map[string]interface{}
+		stocks, err := readJSONData(dir + "/stocks.json")
+		if err != nil {
+			notifyError(err)
+		}
+
 		for symbol := range stocks {
 			price, err := GetStockPrice(symbol + ".NS")
 			if err != nil {
@@ -151,11 +153,10 @@ func main() {
 				continue
 			}
 
-			notify("Stock price alert", fmt.Sprintf("Price of stock %v: %.2f", symbol, price))
-			fmt.Printf("Price of stock %q: %.2f\n", symbol, price)
+			// notify("Stock price alert", fmt.Sprintf("Price of stock %v: %.2f", symbol, price))
+			log.Printf("Price of stock %q: %.2f\n", symbol, price)
 		}
-		time.Sleep(10 * time.Second)
-		break
+		time.Sleep(10 * time.Minute)
 	}
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
