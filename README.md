@@ -2,8 +2,7 @@
 
 Stocks Notifier is a software which tracks real-time stock prices for a list of stocks and sends notifications when price of stock is lower than or equal to threshold value.
 
-Why? Almost all existing softwares which can give this notifications require you to sign up using your phone number of email and also take up a lot of CPU and memory. This notifier does not require anyone to signup and is also light on resources.
-
+Why? Almost all existing softwares require you to sign up using your phone number or email and also take up a lot of CPU and memory. This notifier does not require anyone to signup and is also light on resources.
 
 ### Running locally
 
