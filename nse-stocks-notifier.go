@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 
@@ -158,10 +157,5 @@ func main() {
 		}
 		time.Sleep(10 * time.Minute)
 	}
-	var mem runtime.MemStats
-	runtime.ReadMemStats(&mem)
-	fmt.Printf("Total Allocated = %v MiB", mem.TotalAlloc/1024/1024)
-	fmt.Printf("\tSys = %v MiB", mem.Sys/1024/1024)
-	fmt.Printf("\tHeapAlloc = %v MiB", mem.HeapAlloc/1024/1024)
-	fmt.Printf("\tHeapSys = %v MiB", mem.HeapSys/1024/1024)
+
 }
