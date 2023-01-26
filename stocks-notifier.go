@@ -146,13 +146,13 @@ func main() {
 		}
 
 		for symbol := range stocks {
-			price, err := GetStockPrice(symbol + ".NS")
+			price, err := GetStockPrice(symbol)
 			if err != nil {
 				notifyError(err)
 				continue
 			}
 
-			// notify("Stock price alert", fmt.Sprintf("Price of stock %v: %.2f", symbol, price))
+			notify("Stock price alert", fmt.Sprintf("Price of stock %v: %.2f", symbol, price))
 			log.Printf("Price of stock %q: %.2f\n", symbol, price)
 		}
 		time.Sleep(10 * time.Minute)
