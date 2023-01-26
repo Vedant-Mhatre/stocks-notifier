@@ -1,4 +1,4 @@
-module github.com/Vedant-Mhatre/nse-stocks-notifier
+module github.com/Vedant-Mhatre/stocks-notifier
 
 go 1.19
 
