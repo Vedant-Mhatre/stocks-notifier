@@ -1,14 +1,9 @@
-# Stocks Notifier
+<img width="250" src="https://user-images.githubusercontent.com/52707230/214772056-ef465e1e-4d71-47ec-9fb8-24a441e74e51.png" />
 
-## About
+Stocks Notifier is a software which tracks real-time stock prices for a list of stocks and sends notifications when price of stock is lower than or equal to threshold value.
 
-This script tracks real-time stock prices for a list of stocks and sends notifications when certain criteria are met. It check price every 10 minutes and alerts if price of stock mentioned in [stocks.json](https://github.com/Vedant-Mhatre/stocks-notifier/blob/main/stocks.json) is less than or equal to real time value of that stock.
+Why? Almost all existing softwares which can give this notifications require you to sign up using your phone number of email and also take up a lot of CPU and memory. This notifier does not require anyone to signup and is also light on resources.
 
-Almost all existing softwares which can give this notifications require you to sign up using your phone number of email and also take up a lot of CPU and memory. This simple script does not require anyone to signup and is also light on resources.
-
-### Requirements
-
-* golang
 
 ### Running locally
 
