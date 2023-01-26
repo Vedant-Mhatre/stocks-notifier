@@ -1,7 +1,8 @@
 {
-    "ICICIBANK": 880,
-    "HDFCBANK": 1600,
-    "RELIANCE": 2400,
-    "HDFCNIFETF": 185,
-    "INFY": 1500
+    "ICICIBANK.NS": 880,
+    "HDFCBANK.NS": 1600,
+    "RELIANCE.NS": 2400,
+    "HDFCNIFETF.NS": 185,
+    "INFY.NS": 1500,
+    "AAPL" : 142
 }
