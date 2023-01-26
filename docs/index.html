@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>Stocks Notifier</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="description" content="Free and secure way to get notifications for your stocks" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<link href="https://fonts.googleapis.com/css?family=Inter:400,600" rel="stylesheet" defer />
+	<meta property="og:image" content="https://www.dns.toys/static/thumb.png">
+		<link rel="shortcut icon" href="static/favicon.png" />
+	<link rel="stylesheet" type="text/css" href="static/style.css" />
+</head>
+<body>
+
+<div class="container">
+	<header class="header">
+		<div class="logo">
+			<a href="/"><img src="static/stocks-notifier.png" alt="Stocks Notifier" /></a>
+		</div>
+		<nav class="nav">
+			<a href="https://github.com/Vedant-Mhatre/stocks-notifier">GitHub</a>
+		</nav>
+	</header>
+	<section class="intro">
+		<h1 class="center"><span>Get notified when your stock gets cheap</span></h1>
+
+		<p>
+            Stocks Notifier is a software which tracks real-time stock prices 
+            and sends notifications when price of stock is lower 
+            than or equal to threshold value.
+		</p>
+
+		<p>
+			Follow the below steps to download and run this locally. 
+		</p>
+	</section>
+
+	<section class="box">
+		<h2>Installation (MacOS)</h2>
+        <p>Download <a href="packages/stocks-notifier">executable file</a></p>
+        <p>Download <a href="packages/stocks.json">stocks.json</a> and list the stocks and threshold value you want.</p>
+        <p>Check <a href="https://finance.yahoo.com/lookup">Yahoo Finance</a> for naming convention of stocks.</p>
+        <p>Copy and run the below command to try it out.</p>
+		<code class="block">
+			<p>./stocks-notifier .</p>
+		</code>
+		<p>Pass the directory where stocks.json is located.</p>
+        
+	</section>
+
+	<section>
+		<h1>Why?</h1>
+		Why not? For fun. I wanted to get notification when a stock's price gets lower than a value, 
+        without having to sign up on a software using my email or phone number. Similarly I didn't want to get ads 
+        and wanted something which didn't use lot of CPU and memory.
+		 
+	</section>
+</div>
+
+<footer>
+	<p class="disclaimer">
+		No guarantees are provided on the accuracy, timeliness, reliability, and appropriateness, or completeness of
+		any services or data. They are provided "as is" and "as available" with no warranties or guarantees. This website 
+        template has been copied from Kailash Nadh's <a href="https://github.com/knadh/dns.toys">dns.toys</a> GitHub repository.
+	</p>
+
+	<p><a href="https://vedantmhatre.tech/">Vedant Mhatre</a> &copy; 2023</p>
+</footer>
+
+</body>
+</html>
