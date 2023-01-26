@@ -23,36 +23,48 @@
 		</nav>
 	</header>
 	<section class="intro">
-		<h1 class="center"><span>Get notified when stocks gets cheap</span></h1>
+		<h1 class="center"><span>Get alerts when stock price drops</span></h1>
 
 		<p>
-            Stocks Notifier is a software which tracks real-time stocks 
-            and sends notifications when price of a stock is lower 
-            than or equal to threshold value.
+            Stocks Notifier is software that tracks stocks and sends notifications 
+			when the price drops to or below your desired level, so you never miss a great 
+			deal on your favorite stocks again.
 		</p>
 
 		<p>
-			Follow the below steps to download and run this locally. 
+			Follow the below steps to download and run this. 
 		</p>
 	</section>
 
 	<section class="box">
-		<h2>Installation (MacOS)</h2>
-        <p>Download <a href="packages/stocks-notifier">executable file</a></p>
-        <p>Download <a href="packages/stocks.json">stocks.json</a> and list the stocks and threshold value you want.</p>
-        <p>Check <a href="https://finance.yahoo.com/lookup">Yahoo Finance</a> for naming convention of stocks.</p>
-        <p>Copy and run the below command to try it out.</p>
+		<h2>Downloads (Only for MacOS)</h2>
+        <p>1. Download <a href="packages/stocks-notifier">executable file</a></p>
+        <p>2. Download <a href="packages/stocks.json">stocks.json</a> and list the stocks and threshold value you want.</p>
+		<p>Check <a href="https://finance.yahoo.com/lookup">Yahoo Finance</a> for naming convention of stocks.</p>
+	</section>
+
+	<section class="box">
+		<h2>To try it out</h2>
+        <p>Copy and run the below command</p>
 		<code class="block">
 			<p>./stocks-notifier .</p>
 		</code>
 		<p>Pass the directory where stocks.json is located.</p>
-        
+	</section>
+
+	<section class="box">
+		<h2>To run this in background</h2>
+		<p>Copy and run the below command</p>
+		<code class="block">
+			<p>nohup ./stocks-notifier . &</p>
+		</code>
+        <p>This will also store logs in nohup.out file.</p>
 	</section>
 
 	<section>
 		<h2>Why?</h2>
 		Why not? For fun. I wanted to get notification when a stock's price gets lower than a value, 
-        without having to sign up on a software using my email or phone number. Similarly I didn't want to get any ads 
+        without having to sign up using my email or phone number. Similarly I didn't want to get any ads 
 		and have something which was lightweight on resources.
 		 
 	</section>
