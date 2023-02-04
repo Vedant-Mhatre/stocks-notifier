@@ -6,10 +6,10 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/gen2brain/beeep"
 	"github.com/piquette/finance-go/quote"
 )
 
@@ -70,18 +70,10 @@ func readJSONData(filename string) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func notify(title, text string) error {
-	command := "osascript"
-	arg1 := "-e"
-	arg2 := `display notification "` + text + `" with title "` + title + `"`
-	cmd := exec.Command(command, arg1, arg2)
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd = exec.Command("afplay", "/System/Library/Sounds/Glass.aiff")
-	if err := cmd.Run(); err != nil {
-		return err
+func notify(text string) error {
+	beep_err := beeep.Alert("Stock notifier", text, "assets/warning.png")
+	if beep_err != nil {
+		panic(beep_err)
 	}
 
 	return nil
@@ -89,7 +81,7 @@ func notify(title, text string) error {
 
 func notifyError(err error) {
 	fmt.Printf("Error: %v\n", err)
-	notify("Stock price alert", fmt.Sprintf("Error: %v", err))
+	notify(fmt.Sprintf("Error: %v", err))
 }
 
 func GetStockPrice(symbol string) (float64, error) {
@@ -152,8 +144,14 @@ func main() {
 				continue
 			}
 
-			notify("Stock price alert", fmt.Sprintf("Price of stock %v: %.2f", symbol, price))
 			log.Printf("Price of stock %q: %.2f\n", symbol, price)
+
+			alertMessage := fmt.Sprintf("Price of stock %v: %.2f", symbol, price)
+			notify(alertMessage)
+
+			// 2 second timeout is needed in MacOS for previous notification to get cleared.
+			time.Sleep(2 * time.Second)
+
 		}
 		time.Sleep(10 * time.Minute)
 	}
