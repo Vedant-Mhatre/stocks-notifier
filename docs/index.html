@@ -37,9 +37,12 @@
 	</section>
 
 	<section class="box">
-		<h2>Downloads (Only for MacOS)</h2>
-        <p>1. Download <a href="packages/stocks-notifier">executable file</a></p>
-        <p>2. Download <a href="packages/stocks.json">stocks.json</a> and list the stocks and threshold value you want.</p>
+		<h2>Installation</h2>
+        <p>1. Clone the git repository.</p>
+		<code class="block">
+			<p>git clone https://github.com/Vedant-Mhatre/stocks-notifier.git</p>
+		</code>
+        <p>2. Copy `stocks.sample.json` to `stocks.json` and list the stocks and threshold value you want.</p>
 		<p>Check <a href="https://finance.yahoo.com/lookup">Yahoo Finance</a> for naming convention of stocks.</p>
 	</section>
 
@@ -47,7 +50,7 @@
 		<h2>To try it out</h2>
         <p>Copy and run the below command</p>
 		<code class="block">
-			<p>./stocks-notifier .</p>
+			<p>go run stocks-notifier.go .</p>
 		</code>
 		<p>Pass the directory where stocks.json is located.</p>
 	</section>
@@ -56,7 +59,7 @@
 		<h2>To run this in background</h2>
 		<p>Copy and run the below command</p>
 		<code class="block">
-			<p>nohup ./stocks-notifier . &</p>
+			<p>nohup go run stocks-notifier.go . &</p>
 		</code>
         <p>This will also store logs in nohup.out file.</p>
 	</section>

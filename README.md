@@ -12,13 +12,14 @@ Why? Almost all existing softwares require you to sign up using your phone numbe
 
 * Check [Yahoo Finance](https://finance.yahoo.com/lookup) page for naming convention, eg: for NSE stocks .NS has to be added after stock name.
 
-* Run go file ` go run . . `
-Here second . represents the directory where stocks.json is stored, '.' if you are running this inside same directory.
+* Run go file ` go run stocks-notifier.go . `
+Pass the directory where stocks.json is located.
 
 * If you want to run this file in background:
-``` nohup go run . . & ``` this will output logs to file named nohup.out
+``` nohup go run stocks-notifier.go . & ``` this will output logs to file named nohup.out
 
-### To-Do list
+### Tested on:
 
-- [ ] Only works on MacOS, add support for other OS.
-- [x] Add support for all stock exchanges and cryptos and not just NSE.
+- [x] MacOS
+- [x] Windows
+- [x] Ubuntu 18
