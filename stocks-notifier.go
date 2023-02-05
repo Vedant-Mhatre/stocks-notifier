@@ -89,16 +89,8 @@ func GetStockPrice(symbol string) (float64, error) {
 		return 0, fmt.Errorf("symbol cannot be empty")
 	}
 
-	if !isValidSymbol(symbol) {
-		return 0, fmt.Errorf("invalid symbol %q", symbol)
-	}
-
 	stockQuote, err := quote.Get(symbol)
 	if err != nil {
-		if isNetworkError(err) {
-			return 0, fmt.Errorf("failed to get stock quote due to network error: %v", err)
-		}
-
 		notifyError(err)
 		return 0, fmt.Errorf("failed to get stock quote for symbol %q: %v", symbol, err)
 	}
@@ -108,18 +100,6 @@ func GetStockPrice(symbol string) (float64, error) {
 	}
 
 	return stockQuote.RegularMarketPrice, nil
-}
-
-func isValidSymbol(symbol string) bool {
-	// Add code to check if the symbol is a valid length and contains only alphanumeric characters
-	// Code will be added later
-	return true
-}
-
-func isNetworkError(err error) bool {
-	// Add code to check if the error is a network error
-	// Code will be added later
-	return false
 }
 
 func main() {
