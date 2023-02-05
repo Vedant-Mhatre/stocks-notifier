@@ -117,17 +117,27 @@ func main() {
 			notifyError(err)
 		}
 
-		for symbol := range stocks {
+		for symbol, alertPrice := range stocks {
+
+			alertPrice, ok := alertPrice.(float64)
+			if !ok {
+				notify(fmt.Sprintf("Unexpected type for value of symbol %s\n", symbol))
+				log.Printf("Unexpected type for value of symbol %s\n", symbol)
+				continue
+			}
+
 			price, err := GetStockPrice(symbol)
 			if err != nil {
 				notifyError(err)
 				continue
 			}
 
-			log.Printf("Price of stock %q: %.2f\n", symbol, price)
+			log.Printf("Price of stock %q: %.2f, Alert is set at %.2f\n", symbol, price, alertPrice)
 
-			alertMessage := fmt.Sprintf("Price of stock %v: %.2f", symbol, price)
-			notify(alertMessage)
+			if price <= alertPrice {
+				alertMessage := fmt.Sprintf("Price of stock %v: %.2f", symbol, price)
+				notify(alertMessage)
+			}
 
 			// 2 second timeout is needed in MacOS for previous notification to get cleared.
 			time.Sleep(2 * time.Second)
