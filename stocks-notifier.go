@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -45,7 +46,10 @@ func directoryPathHelpMessage() {
 }
 
 func readJSONData(dir string) (map[string]interface{}, error) {
-	file, err := os.Open(dir + "/stocks.json")
+
+	fullPath := filepath.Join(dir, "stocks.json") //This is required to get platform specific path
+
+	file, err := os.Open(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, fmt.Errorf("stocks.json does not exist at given path")
