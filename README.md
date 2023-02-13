@@ -2,7 +2,7 @@
 
 Stocks Notifier is a software which tracks real-time stock prices for a list of stocks and sends notifications when price of stock is lower than or equal to threshold value.
 
-Why? Almost all existing softwares require you to sign up using your phone number or email and also take up a lot of CPU and memory. This notifier does not require anyone to signup and is also light on resources.
+For docs, visit [stocksnotifier.com](https://stocksnotifier.com)
 
 ### Running locally
 
@@ -17,9 +17,3 @@ Pass the directory where stocks.json is located.
 
 * If you want to run this file in background:
 ``` nohup go run stocks-notifier.go . & ``` this will output logs to file named nohup.out
-
-### Tested on:
-
-- [x] MacOS
-- [x] Windows
-- [x] Ubuntu 18
