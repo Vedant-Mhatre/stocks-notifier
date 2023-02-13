@@ -111,10 +111,10 @@ func main() {
 
 		for symbol, alertPrice := range stocks {
 
-			alertPrice, ok := alertPrice.(float64)
-			if !ok {
-				notify(fmt.Sprintf("Unexpected type for value of symbol %s\n", symbol))
-				log.Printf("Unexpected type for value of symbol %s\n", symbol)
+			alertPrice, floatErr := alertPrice.(float64)
+			if !floatErr {
+				notify(fmt.Sprintf("Unexpected type of value for symbol %s\n", symbol))
+				log.Printf("Unexpected type og value for symbol %s\n", symbol)
 				continue
 			}
 
