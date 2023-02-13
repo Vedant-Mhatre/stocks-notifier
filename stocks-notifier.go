@@ -40,17 +40,15 @@ func directoryPathHelpMessage() {
   "HDFCBANK": 1600,
   "INFY": 1500
 }`))
-	fmt.Println("\nTo run the program, use the following command:")
-	fmt.Printf("\n%s <directory>\n", os.Args[0])
-	fmt.Println("\nIf the stocks.json file is in the current directory, use '.' as the directory path.")
+	fmt.Println("\nCheckout documentation if you need any help: https://stocksnotifier.com/")
 	os.Exit(1)
 }
 
-func readJSONData(filename string) (map[string]interface{}, error) {
-	file, err := os.Open(filename)
+func readJSONData(dir string) (map[string]interface{}, error) {
+	file, err := os.Open(dir + "/stocks.json")
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("file does not exist")
+			return nil, fmt.Errorf("stocks.json does not exist at given path")
 		}
 		return nil, err
 	}
@@ -63,10 +61,9 @@ func readJSONData(filename string) (map[string]interface{}, error) {
 		if err == io.EOF {
 			return nil, fmt.Errorf("empty file")
 		}
-		return nil, fmt.Errorf("invalid JSON data: %v", err)
+		return nil, fmt.Errorf("invalid JSON file: %v", err)
 	}
 
-	log.Print(data)
 	return data, nil
 }
 
@@ -106,7 +103,7 @@ func main() {
 
 	for {
 		var stocks map[string]interface{}
-		stocks, err := readJSONData(dir + "/stocks.json")
+		stocks, err := readJSONData(dir)
 		if err != nil {
 			notify(fmt.Sprintf("Error: %v", err))
 			log.Printf("Error: %v", err)
@@ -139,6 +136,7 @@ func main() {
 			time.Sleep(2 * time.Second)
 
 		}
+		log.Printf("Sleeping for 10 minutes")
 		time.Sleep(10 * time.Minute)
 	}
 
