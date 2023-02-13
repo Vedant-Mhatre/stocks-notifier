@@ -79,11 +79,6 @@ func notify(text string) error {
 	return nil
 }
 
-func notifyError(err error) {
-	fmt.Printf("Error: %v\n", err)
-	notify(fmt.Sprintf("Error: %v", err))
-}
-
 func GetStockPrice(symbol string) (float64, error) {
 	if symbol == "" {
 		return 0, fmt.Errorf("symbol cannot be empty")
@@ -91,7 +86,6 @@ func GetStockPrice(symbol string) (float64, error) {
 
 	stockQuote, err := quote.Get(symbol)
 	if err != nil {
-		notifyError(err)
 		return 0, fmt.Errorf("failed to get stock quote for symbol %q: %v", symbol, err)
 	}
 
@@ -114,7 +108,8 @@ func main() {
 		var stocks map[string]interface{}
 		stocks, err := readJSONData(dir + "/stocks.json")
 		if err != nil {
-			notifyError(err)
+			notify(fmt.Sprintf("Error: %v", err))
+			log.Printf("Error: %v", err)
 		}
 
 		for symbol, alertPrice := range stocks {
@@ -128,7 +123,8 @@ func main() {
 
 			price, err := GetStockPrice(symbol)
 			if err != nil {
-				notifyError(err)
+				notify(fmt.Sprintf("Error: %v", err))
+				log.Printf("Error: %v", err)
 				continue
 			}
 
