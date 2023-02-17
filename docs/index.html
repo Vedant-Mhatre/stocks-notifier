@@ -28,7 +28,7 @@
 			<a href="/"><img src="static/stocks-notifier.png" alt="Stocks Notifier" /></a>
 		</div>
 		<nav class="nav">
-			<a href="https://github.com/Vedant-Mhatre/stocks-notifier">GitHub</a>
+			<a href="https://github.com/Vedant-Mhatre/stocks-notifier" target="_blank" rel="noopener noreferrer">GitHub</a>
 		</nav>
 	</header>
 	<section class="intro">
@@ -46,31 +46,52 @@
 	</section>
 
 	<section class="box">
-		<h2>Installation</h2>
+
+		<h2>Binary</h2>
+        <p>1. Download binary from here: <a href="https://github.com/Vedant-Mhatre/stocks-notifier/releases" target="_blank" rel="noopener noreferrer">Downloads</a></p>
+        <p>2. Download <a href="https://github.com/Vedant-Mhatre/stocks-notifier/releases/download/v0.2.0/stocks.json" target="_blank" rel="noopener noreferrer">stocks.json</a> file and edit the stocks and threshold value you want.</p>
+		<p>Check <a href="https://finance.yahoo.com/lookup" target="_blank" rel="noopener noreferrer">Yahoo Finance</a> for naming convention of stocks.</p>
+		
+		<h4>To try it out</h4>
+        <p>Copy and run the below command</p>
+		<code class="block">
+			<p>./stocks-notifier .</p>
+		</code>
+		<p>Pass the directory where stocks.json is located.</p>
+		
+		<h4>To run this in background</h4>
+		<p>Copy and run the below command</p>
+		<code class="block">
+			<p>nohup ./stocks-notifier . &</p>
+		</code>
+        <p>This will also store logs in nohup.out file.</p>
+
+	</section>
+
+	<section class="box">
+
+		<h2>Compiling from source</h2>
         <p>1. Clone the git repository.</p>
 		<code class="block">
 			<p>git clone https://github.com/Vedant-Mhatre/stocks-notifier.git</p>
 		</code>
         <p>2. Copy `stocks.sample.json` to `stocks.json` and list the stocks and threshold value you want.</p>
-		<p>Check <a href="https://finance.yahoo.com/lookup">Yahoo Finance</a> for naming convention of stocks.</p>
-	</section>
+		<p>Check <a href="https://finance.yahoo.com/lookup" target="_blank" rel="noopener noreferrer">Yahoo Finance</a> for naming convention of stocks.</p>
 
-	<section class="box">
-		<h2>To try it out</h2>
+		<h4>To try it out</h4>
         <p>Copy and run the below command</p>
 		<code class="block">
 			<p>go run stocks-notifier.go .</p>
 		</code>
 		<p>Pass the directory where stocks.json is located.</p>
-	</section>
 
-	<section class="box">
-		<h2>To run this in background</h2>
+		<h4>To run this in background</h4>
 		<p>Copy and run the below command</p>
 		<code class="block">
 			<p>nohup go run stocks-notifier.go . &</p>
 		</code>
         <p>This will also store logs in nohup.out file.</p>
+
 	</section>
 
 	<section>
@@ -79,18 +100,18 @@
         without having to sign up using my email or phone number. Similarly I didn't want to get any ads 
 		and have something which was lightweight on resources. Another goal was to get
 		little hands-on experience with Google Analytics and SEO.
-		 
 	</section>
+
 </div>
 
 <footer>
 	<p class="disclaimer">
 		No guarantees are provided on the accuracy, timeliness, reliability, and appropriateness, or completeness of
-		any services or data. They are provided "as is" and "as available" with no warranties or guarantees. This website 
-        template has been copied from Kailash Nadh's <a href="https://github.com/knadh/dns.toys">dns.toys</a> GitHub repository.
+		any services or data. They are provided "as is" and "as available" with no warranties or guarantees. This website's 
+        template has been copied from Kailash Nadh's <a href="https://github.com/knadh/dns.toys" target="_blank" rel="noopener noreferrer">dns.toys</a> GitHub repository.
 	</p>
 
-	<p><a href="https://vedantmhatre.tech/">Vedant Mhatre</a> &copy; 2023</p>
+	<p><a href="https://vedantmhatre.tech/" target="_blank" rel="noopener noreferrer">Vedant Mhatre</a> &copy; 2023</p>
 </footer>
 
 </body>
