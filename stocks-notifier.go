@@ -134,10 +134,9 @@ func main() {
 			if price <= alertPrice {
 				alertMessage := fmt.Sprintf("Price of stock %v: %.2f", symbol, price)
 				notify(alertMessage)
+				// 2 second timeout is needed in MacOS for previous stock notification to get cleared.
+				time.Sleep(2 * time.Second)
 			}
-
-			// 2 second timeout is needed in MacOS for previous notification to get cleared.
-			time.Sleep(2 * time.Second)
 
 		}
 		log.Printf("Sleeping for 10 minutes")
