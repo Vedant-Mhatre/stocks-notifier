@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/gen2brain/beeep v0.0.0-20220909211152-5a9ec94374f6
-	github.com/piquette/finance-go v1.0.0
+	github.com/piquette/finance-go v1.1.0
 )
 
 require (
