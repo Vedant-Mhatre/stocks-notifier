@@ -2,7 +2,7 @@
 
 Stocks Notifier is a software which tracks real-time stock prices for a list of stocks and sends notifications when price of stock is lower than or equal to threshold value.
 
-For docs, visit [stocksnotifier.com](https://stocksnotifier.com)
+For docs, visit [blog.vmhatre.com/stocks-notifier/](https://blog.vmhatre.com/stocks-notifier/)
 
 ### Running locally
 
