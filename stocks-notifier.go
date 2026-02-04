@@ -111,7 +111,7 @@ func GetStockPrice(symbol string) (float64, error) {
 		if delayedErr == nil {
 			return delayedPrice, nil
 		}
-		return 0, fmt.Errorf("real-time provider failed: %v; delayed provider failed: %v", err, delayedErr)
+		return 0, fmt.Errorf("delayed provider failed: %v", delayedErr)
 	}
 
 	return 0, fmt.Errorf("real-time quotes only support plain US tickers (no suffix). For symbols like %q, set STOCKS_NOTIFIER_ALLOW_DELAYED=1 to use delayed quotes", symbol)
