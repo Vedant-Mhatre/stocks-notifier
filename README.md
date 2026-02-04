@@ -10,8 +10,8 @@ For docs, visit [blog.vmhatre.com/stocks-notifier/](https://blog.vmhatre.com/sto
 
 * Copy `stocks.sample.json` to `stocks.json` and edit the value to set the lower threshold value at which you want to get alert.
 
-* By default, this uses the public `stockprices.dev` API for real-time US equities and ETFs. It expects plain US tickers (e.g., `AAPL`, `TSLA`). If your symbol has a suffix (like `.NS`), it will be ignored for real-time lookups.
-* If you want delayed data as a fallback, set `STOCKS_NOTIFIER_ALLOW_DELAYED=1`. This uses Stooq (daily close) when real-time fails.
+* By default, this uses the public `stockprices.dev` API for real-time US equities and ETFs. It expects plain US tickers (e.g., `AAPL`, `TSLA`).
+* If your symbol has a suffix (like `.NS`) or is non‑US, set `STOCKS_NOTIFIER_ALLOW_DELAYED=1` to use Stooq (daily close) as a fallback.
 
 * Run go file ` go run stocks-notifier.go . `
 Pass the directory where stocks.json is located.

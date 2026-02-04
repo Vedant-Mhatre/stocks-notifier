@@ -43,7 +43,7 @@ func directoryPathHelpMessage() {
   "HDFCBANK": 1600,
   "INFY": 1500
 }`))
-	fmt.Println("\nCheckout documentation if you need any help: https://stocksnotifier.com/")
+	fmt.Println("\nCheckout documentation if you need any help: https://blog.vmhatre.com/stocks-notifier/")
 	os.Exit(1)
 }
 
@@ -89,9 +89,21 @@ func GetStockPrice(symbol string) (float64, error) {
 		return 0, fmt.Errorf("symbol cannot be empty")
 	}
 
-	price, err := getStockpricesDevQuote(symbol)
-	if err == nil {
-		return price, nil
+	if !strings.Contains(symbol, ".") {
+		price, err := getStockpricesDevQuote(symbol)
+		if err == nil {
+			return price, nil
+		}
+
+		if os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") == "1" {
+			delayedPrice, delayedErr := getStooqQuote(symbol)
+			if delayedErr == nil {
+				return delayedPrice, nil
+			}
+			return 0, fmt.Errorf("real-time provider failed: %v; delayed provider failed: %v", err, delayedErr)
+		}
+
+		return 0, err
 	}
 
 	if os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") == "1" {
@@ -102,7 +114,7 @@ func GetStockPrice(symbol string) (float64, error) {
 		return 0, fmt.Errorf("real-time provider failed: %v; delayed provider failed: %v", err, delayedErr)
 	}
 
-	return 0, err
+	return 0, fmt.Errorf("real-time quotes only support plain US tickers (no suffix). For symbols like %q, set STOCKS_NOTIFIER_ALLOW_DELAYED=1 to use delayed quotes", symbol)
 }
 
 type stockpricesDevResponse struct {
