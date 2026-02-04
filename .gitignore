@@ -24,4 +24,3 @@ stocks.json
 stocks-notifier
 
 dist/
-.goreleaser.yaml

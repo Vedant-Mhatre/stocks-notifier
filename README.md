@@ -4,6 +4,10 @@ Stocks Notifier is a privacy-first alert tool that tracks real-time stock prices
 
 For docs, visit [blog.vmhatre.com/stocks-notifier/](https://blog.vmhatre.com/stocks-notifier/)
 
+### Status
+
+This repo is active and working for real-time US tickers via `stockprices.dev`, with an optional delayed fallback for non‑US symbols using Stooq.
+
 ### Running locally
 
 * Clone the repo.
