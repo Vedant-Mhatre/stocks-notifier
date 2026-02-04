@@ -89,12 +89,97 @@ func GetStockPrice(symbol string) (float64, error) {
 		return 0, fmt.Errorf("symbol cannot be empty")
 	}
 
-	price, err := getStooqQuote(symbol)
-	if err != nil {
-		return 0, err
+	price, err := getStockpricesDevQuote(symbol)
+	if err == nil {
+		return price, nil
 	}
 
-	return price, nil
+	if os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") == "1" {
+		delayedPrice, delayedErr := getStooqQuote(symbol)
+		if delayedErr == nil {
+			return delayedPrice, nil
+		}
+		return 0, fmt.Errorf("real-time provider failed: %v; delayed provider failed: %v", err, delayedErr)
+	}
+
+	return 0, err
+}
+
+type stockpricesDevResponse struct {
+	Ticker           string   `json:"Ticker"`
+	Name             string   `json:"Name"`
+	Price            *float64 `json:"Price"`
+	ChangeAmount     *float64 `json:"ChangeAmount"`
+	ChangePercentage *float64 `json:"ChangePercentage"`
+}
+
+func getStockpricesDevQuote(symbol string) (float64, error) {
+	cleanSymbol := normalizeStockpricesSymbol(symbol)
+	if cleanSymbol == "" {
+		return 0, fmt.Errorf("symbol cannot be empty")
+	}
+
+	price, err := fetchStockpricesDev(cleanSymbol, "stocks")
+	if err == nil {
+		return price, nil
+	}
+
+	// If it's not a stock symbol, try the ETF endpoint.
+	etfPrice, etfErr := fetchStockpricesDev(cleanSymbol, "etfs")
+	if etfErr == nil {
+		return etfPrice, nil
+	}
+
+	return 0, fmt.Errorf("stockprices.dev lookup failed for %q: stocks error: %v; etfs error: %v", cleanSymbol, err, etfErr)
+}
+
+func fetchStockpricesDev(symbol, instrument string) (float64, error) {
+	url := fmt.Sprintf("https://stockprices.dev/api/%s/%s", instrument, symbol)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to build request: %v", err)
+	}
+	req.Header.Set("User-Agent", "stocks-notifier/1.0")
+	req.Header.Set("Accept", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("failed to fetch quote for symbol %q: %v", symbol, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		msg := strings.TrimSpace(string(body))
+		if msg == "" {
+			msg = resp.Status
+		}
+		return 0, fmt.Errorf("unexpected status %d for %q: %s", resp.StatusCode, symbol, msg)
+	}
+
+	var payload stockpricesDevResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return 0, fmt.Errorf("failed to decode quote response for %q: %v", symbol, err)
+	}
+
+	if payload.Price == nil {
+		return 0, fmt.Errorf("missing price for symbol %q", symbol)
+	}
+
+	return *payload.Price, nil
+}
+
+func normalizeStockpricesSymbol(symbol string) string {
+	symbol = strings.TrimSpace(symbol)
+	if symbol == "" {
+		return ""
+	}
+	if dot := strings.Index(symbol, "."); dot != -1 {
+		symbol = symbol[:dot]
+	}
+	return strings.ToUpper(symbol)
 }
 
 func getStooqQuote(symbol string) (float64, error) {

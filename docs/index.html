@@ -3,9 +3,9 @@
 <head>
 	<title>Stocks Notifier</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<meta name="description" content="Get notified when stocks gets cheap without any sign in, without any ads and free of cost" />
+	<meta name="description" content="Privacy-first stock alerts with real-time prices, no sign-in, and no ads." />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<link rel=“canonical” href=“https://stocksnotifier.com” />
+	<link rel="canonical" href="https://stocksnotifier.com" />
 	<link href="https://fonts.googleapis.com/css?family=Inter:400,600" rel="stylesheet" defer />
 	<meta property="og:image" content="https://stocksnotifier.com/static/thumb.png">
 		<link rel="shortcut icon" href="static/favicon.png" />
@@ -35,9 +35,8 @@
 		<h1 class="center"><span>Get alerts when stock price drops</span></h1>
 
 		<p>
-            Stocks Notifier is software that tracks stocks and sends notifications 
-			when the price drops to or below your desired level, so you never miss a great 
-			deal on your favorite stocks again.
+            Stocks Notifier is a privacy-first tool that tracks real-time stock prices and sends notifications
+			when the price drops to or below your desired level.
 		</p>
 
 		<p>
@@ -50,7 +49,8 @@
 		<h2>Binary</h2>
         <p>1. Download binary from here: <a href="https://github.com/Vedant-Mhatre/stocks-notifier/releases" target="_blank" rel="noopener noreferrer">Downloads</a></p>
         <p>2. Download <a href="https://github.com/Vedant-Mhatre/stocks-notifier/releases/download/v0.2.0/stocks.json" target="_blank" rel="noopener noreferrer">stocks.json</a> file and edit the stocks and threshold value you want.</p>
-		<p>Check <a href="https://finance.yahoo.com/lookup" target="_blank" rel="noopener noreferrer">Yahoo Finance</a> for naming convention of stocks.</p>
+		<p>We use the public <a href="https://stockprices.dev" target="_blank" rel="noopener noreferrer">stockprices.dev</a> API for real-time US equities and ETFs. Use plain US tickers like <code>AAPL</code>, <code>TSLA</code>. Suffixes (like <code>.NS</code>) are ignored for real-time lookups.</p>
+		<p>If you want a delayed fallback, set <code>STOCKS_NOTIFIER_ALLOW_DELAYED=1</code> to use Stooq (daily close) when real-time is unavailable.</p>
 		
 		<h4>To try it out</h4>
         <p>Copy and run the below command</p>
@@ -76,7 +76,8 @@
 			<p>git clone https://github.com/Vedant-Mhatre/stocks-notifier.git</p>
 		</code>
         <p>2. Copy `stocks.sample.json` to `stocks.json` and list the stocks and threshold value you want.</p>
-		<p>Check <a href="https://finance.yahoo.com/lookup" target="_blank" rel="noopener noreferrer">Yahoo Finance</a> for naming convention of stocks.</p>
+		<p>We use the public <a href="https://stockprices.dev" target="_blank" rel="noopener noreferrer">stockprices.dev</a> API for real-time US equities and ETFs. Use plain US tickers like <code>AAPL</code>, <code>TSLA</code>. Suffixes (like <code>.NS</code>) are ignored for real-time lookups.</p>
+		<p>If you want a delayed fallback, set <code>STOCKS_NOTIFIER_ALLOW_DELAYED=1</code> to use Stooq (daily close) when real-time is unavailable.</p>
 
 		<h4>To try it out</h4>
         <p>Copy and run the below command</p>
@@ -96,9 +97,8 @@
 
 	<section>
 		<h2>Why?</h2>
-		I wanted to get notification when a stock's price crosses a particular value, 
-        without having to sign up using my email or phone number. Similarly I didn't want to get any ads 
-		and have something which was lightweight on resources.
+		I wanted real-time stock alerts without signing up with my email or phone number.
+		I also didn’t want ads, tracking, or a heavy app running all day.
 	</section>
 
 </div>
