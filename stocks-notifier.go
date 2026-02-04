@@ -93,11 +93,18 @@ func GetStockPrice(symbol string) (float64, error) {
 		log.Printf("Warning: %q looks like a non-US ticker. Real-time quotes only support plain US tickers; set STOCKS_NOTIFIER_ALLOW_DELAYED=1 to use delayed quotes.", symbol)
 	}
 
-	if !allowRealtimeRequest() {
-		return 0, fmt.Errorf("real-time provider temporarily disabled due to recent failures")
-	}
-
 	if !strings.Contains(symbol, ".") {
+		if !allowRealtimeRequest() {
+			if os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") == "1" {
+				delayedPrice, delayedErr := getStooqQuote(symbol)
+				if delayedErr == nil {
+					return delayedPrice, nil
+				}
+				return 0, fmt.Errorf("real-time provider temporarily disabled; delayed provider failed: %v", delayedErr)
+			}
+			return 0, fmt.Errorf("real-time provider temporarily disabled due to recent failures")
+		}
+
 		price, err := getStockpricesDevQuote(symbol)
 		if err == nil {
 			markRealtimeSuccess()
