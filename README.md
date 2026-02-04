@@ -1,5 +1,8 @@
 <img width="250" src="https://user-images.githubusercontent.com/52707230/214772056-ef465e1e-4d71-47ec-9fb8-24a441e74e51.png" />
 
+[![Release](https://img.shields.io/github/v/release/Vedant-Mhatre/stocks-notifier)](https://github.com/Vedant-Mhatre/stocks-notifier/releases)
+[![Release Workflow](https://github.com/Vedant-Mhatre/stocks-notifier/actions/workflows/release.yml/badge.svg)](https://github.com/Vedant-Mhatre/stocks-notifier/actions/workflows/release.yml)
+
 Stocks Notifier is a privacy-first alert tool that tracks real-time stock prices for a list of stocks and sends notifications when a price is lower than or equal to your threshold.
 
 For docs, visit [blog.vmhatre.com/stocks-notifier/](https://blog.vmhatre.com/stocks-notifier/)
