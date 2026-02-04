@@ -4,7 +4,6 @@ go 1.21.5
 
 require (
 	github.com/gen2brain/beeep v0.11.2
-	github.com/piquette/finance-go v1.1.0
 )
 
 require (
