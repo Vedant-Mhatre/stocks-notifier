@@ -89,6 +89,10 @@ func GetStockPrice(symbol string) (float64, error) {
 		return 0, fmt.Errorf("symbol cannot be empty")
 	}
 
+	if strings.Contains(symbol, ".") && os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") != "1" {
+		log.Printf("Warning: %q looks like a non-US ticker. Real-time quotes only support plain US tickers; set STOCKS_NOTIFIER_ALLOW_DELAYED=1 to use delayed quotes.", symbol)
+	}
+
 	if !allowRealtimeRequest() {
 		return 0, fmt.Errorf("real-time provider temporarily disabled due to recent failures")
 	}
