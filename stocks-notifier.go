@@ -89,11 +89,17 @@ func GetStockPrice(symbol string) (float64, error) {
 		return 0, fmt.Errorf("symbol cannot be empty")
 	}
 
+	if !allowRealtimeRequest() {
+		return 0, fmt.Errorf("real-time provider temporarily disabled due to recent failures")
+	}
+
 	if !strings.Contains(symbol, ".") {
 		price, err := getStockpricesDevQuote(symbol)
 		if err == nil {
+			markRealtimeSuccess()
 			return price, nil
 		}
+		markRealtimeFailure(err)
 
 		if os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") == "1" {
 			delayedPrice, delayedErr := getStooqQuote(symbol)
@@ -115,6 +121,36 @@ func GetStockPrice(symbol string) (float64, error) {
 	}
 
 	return 0, fmt.Errorf("real-time quotes only support plain US tickers (no suffix). For symbols like %q, set STOCKS_NOTIFIER_ALLOW_DELAYED=1 to use delayed quotes", symbol)
+}
+
+const (
+	realtimeFailureThreshold = 3
+	realtimeCooldown         = 5 * time.Minute
+)
+
+var (
+	realtimeFailureCount int
+	realtimeDisabledUntil time.Time
+)
+
+func allowRealtimeRequest() bool {
+	if realtimeDisabledUntil.IsZero() {
+		return true
+	}
+	return time.Now().After(realtimeDisabledUntil)
+}
+
+func markRealtimeSuccess() {
+	realtimeFailureCount = 0
+	realtimeDisabledUntil = time.Time{}
+}
+
+func markRealtimeFailure(err error) {
+	realtimeFailureCount++
+	if realtimeFailureCount >= realtimeFailureThreshold {
+		realtimeDisabledUntil = time.Now().Add(realtimeCooldown)
+		log.Printf("Real-time provider disabled for %s after %d failures: last error: %v", realtimeCooldown, realtimeFailureCount, err)
+	}
 }
 
 type stockpricesDevResponse struct {
