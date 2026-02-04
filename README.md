@@ -13,6 +13,11 @@ This repo is active and working for real-time US tickers via `stockprices.dev`, 
 
 Made by [Vedant Mhatre](https://vmhatre.com/).
 
+### Data sources
+
+* Real-time (US only): `stockprices.dev` (no signup, public endpoint)
+* Delayed fallback: Stooq daily close when `STOCKS_NOTIFIER_ALLOW_DELAYED=1`
+
 ### Running locally
 
 * Clone the repo.
@@ -27,3 +32,9 @@ Pass the directory where stocks.json is located.
 
 * If you want to run this file in background:
 ``` nohup go run stocks-notifier.go . & ``` this will output logs to file named nohup.out
+
+### Testing
+
+```bash
+go test ./...
+```
