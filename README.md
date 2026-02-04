@@ -8,6 +8,8 @@ For docs, visit [blog.vmhatre.com/stocks-notifier/](https://blog.vmhatre.com/sto
 
 This repo is active and working for real-time US tickers via `stockprices.dev`, with an optional delayed fallback for non‑US symbols using Stooq.
 
+Made by [Vedant Mhatre](https://vmhatre.com/).
+
 ### Running locally
 
 * Clone the repo.
