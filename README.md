@@ -26,6 +26,8 @@ Made by [Vedant Mhatre](https://vmhatre.com/).
 * Legacy rule format still works: `"AAPL": 180` (alerts when price is `below` 180).
 * Directional rule format: `"TSLA": {"threshold": 250, "direction": "above"}` (alerts when price is `above` 250).
 * Supported directions: `below`, `above`. Direction defaults to `below`.
+* Alert persistence is enabled: notifications are sent when a symbol enters alert state, and repeated alerts are suppressed until the condition clears and triggers again.
+* Optional reminders while condition stays true: set `STOCKS_NOTIFIER_REMINDER_INTERVAL` (example: `2h`). Default is disabled.
 
 * By default, this uses the public `stockprices.dev` API for real-time US equities and ETFs. It expects plain US tickers (e.g., `AAPL`, `TSLA`).
 * If your symbol has a suffix (like `.NS`) or is non‑US, set `STOCKS_NOTIFIER_ALLOW_DELAYED=1` to use Stooq (daily close) as a fallback.
