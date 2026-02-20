@@ -35,12 +35,15 @@ Made by [Vedant Mhatre](https://vmhatre.com/).
 
 * By default, this uses the public `stockprices.dev` API for real-time US equities and ETFs. It expects plain US tickers (e.g., `AAPL`, `TSLA`).
 * If your symbol has a suffix (like `.NS`) or is non‑US, set `STOCKS_NOTIFIER_ALLOW_DELAYED=1` to use Stooq (daily close) as a fallback.
+* You can also run the local config UI and avoid manual JSON/env editing:
+  * `go run . . --web`
+  * Open `http://127.0.0.1:8080`
 
-* Run go file ` go run stocks-notifier.go . `
+* Run from source: `go run . .`
 Pass the directory where stocks.json is located.
 
 * If you want to run this file in background:
-``` nohup go run stocks-notifier.go . & ``` this will output logs to file named nohup.out
+``` nohup go run . . & ``` this will output logs to file named nohup.out
 
 ### Testing
 
