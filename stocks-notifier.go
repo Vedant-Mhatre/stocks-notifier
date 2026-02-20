@@ -45,6 +45,9 @@ func directoryPathHelpMessage() {
     "direction": "above"
   }
 }`))
+	fmt.Println("\nOptional flags:")
+	fmt.Println("  --web           Start local configuration UI")
+	fmt.Println("  --addr=HOST:PORT  Change UI bind address (default 127.0.0.1:8080)")
 	fmt.Println("\nCheckout documentation if you need any help: https://blog.vmhatre.com/stocks-notifier/")
 	os.Exit(1)
 }
@@ -53,6 +56,7 @@ const (
 	directionBelow              = "below"
 	directionAbove              = "above"
 	alertStateFile              = ".stocks-notifier-state.json"
+	settingsFile                = ".stocks-notifier-settings.json"
 	defaultPollInterval         = 10 * time.Minute
 	defaultNearInterval         = 2 * time.Minute
 	defaultNearThresholdPercent = 2.0
@@ -62,6 +66,22 @@ type symbolAlertState struct {
 	InAlert          bool  `json:"in_alert"`
 	LastNotifiedUnix int64 `json:"last_notified_unix,omitempty"`
 }
+
+type AppSettings struct {
+	AllowDelayedFallback bool    `json:"allowDelayedFallback"`
+	ReminderInterval     string  `json:"reminderInterval,omitempty"`
+	PollInterval         string  `json:"pollInterval,omitempty"`
+	PollNearInterval     string  `json:"pollNearInterval,omitempty"`
+	NearThresholdPercent float64 `json:"nearThresholdPercent,omitempty"`
+}
+
+type cliOptions struct {
+	Dir  string
+	Web  bool
+	Addr string
+}
+
+var appSettings AppSettings
 
 type AlertRule struct {
 	Threshold float64 `json:"threshold"`
@@ -107,6 +127,38 @@ func parseStockRules(rawRules map[string]json.RawMessage) (map[string]AlertRule,
 	return rules, nil
 }
 
+func parseCLIOptions() (cliOptions, error) {
+	if len(os.Args) < 2 {
+		return cliOptions{}, fmt.Errorf("file path not provided")
+	}
+
+	dir := os.Args[1]
+	if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+		return cliOptions{}, fmt.Errorf("'%s' is not a valid directory", dir)
+	}
+
+	opts := cliOptions{
+		Dir:  dir,
+		Addr: "127.0.0.1:8080",
+	}
+
+	for _, arg := range os.Args[2:] {
+		switch {
+		case arg == "--web":
+			opts.Web = true
+		case strings.HasPrefix(arg, "--addr="):
+			opts.Addr = strings.TrimSpace(strings.TrimPrefix(arg, "--addr="))
+			if opts.Addr == "" {
+				return cliOptions{}, fmt.Errorf("--addr cannot be empty")
+			}
+		default:
+			return cliOptions{}, fmt.Errorf("unsupported argument %q", arg)
+		}
+	}
+
+	return opts, nil
+}
+
 func readJSONData(dir string) (map[string]AlertRule, error) {
 
 	fullPath := filepath.Join(dir, "stocks.json") //This is required to get platform specific path
@@ -133,6 +185,74 @@ func readJSONData(dir string) (map[string]AlertRule, error) {
 	return parseStockRules(rawRules)
 }
 
+func writeJSONData(dir string, rules map[string]AlertRule) error {
+	fullPath := filepath.Join(dir, "stocks.json")
+	tmpPath := fullPath + ".tmp"
+
+	tmpFile, err := os.Create(tmpPath)
+	if err != nil {
+		return err
+	}
+
+	enc := json.NewEncoder(tmpFile)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(rules); err != nil {
+		_ = tmpFile.Close()
+		return err
+	}
+
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpPath, fullPath)
+}
+
+func readAppSettings(dir string) (AppSettings, error) {
+	fullPath := filepath.Join(dir, settingsFile)
+	file, err := os.Open(fullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return AppSettings{}, nil
+		}
+		return AppSettings{}, err
+	}
+	defer file.Close()
+
+	var settings AppSettings
+	if err := json.NewDecoder(file).Decode(&settings); err != nil {
+		if err == io.EOF {
+			return AppSettings{}, nil
+		}
+		return AppSettings{}, fmt.Errorf("invalid settings file: %v", err)
+	}
+
+	return settings, nil
+}
+
+func writeAppSettings(dir string, settings AppSettings) error {
+	fullPath := filepath.Join(dir, settingsFile)
+	tmpPath := fullPath + ".tmp"
+
+	tmpFile, err := os.Create(tmpPath)
+	if err != nil {
+		return err
+	}
+
+	enc := json.NewEncoder(tmpFile)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(settings); err != nil {
+		_ = tmpFile.Close()
+		return err
+	}
+
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpPath, fullPath)
+}
+
 func notify(text string) error {
 	iconPath := "assets/warning.png"
 	if _, err := os.Stat(iconPath); err != nil {
@@ -149,13 +269,14 @@ func GetStockPrice(symbol string) (float64, error) {
 		return 0, fmt.Errorf("symbol cannot be empty")
 	}
 
-	if strings.Contains(symbol, ".") && os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") != "1" {
+	allowDelayed := allowDelayedFallbackEnabled()
+	if strings.Contains(symbol, ".") && !allowDelayed {
 		log.Printf("Warning: %q looks like a non-US ticker. Real-time quotes only support plain US tickers; set STOCKS_NOTIFIER_ALLOW_DELAYED=1 to use delayed quotes.", symbol)
 	}
 
 	if !strings.Contains(symbol, ".") {
 		if !allowRealtimeRequest() {
-			if os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") == "1" {
+			if allowDelayed {
 				delayedPrice, delayedErr := getStooqQuote(symbol)
 				if delayedErr == nil {
 					return delayedPrice, nil
@@ -172,7 +293,7 @@ func GetStockPrice(symbol string) (float64, error) {
 		}
 		markRealtimeFailure(err)
 
-		if os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") == "1" {
+		if allowDelayed {
 			delayedPrice, delayedErr := getStooqQuote(symbol)
 			if delayedErr == nil {
 				return delayedPrice, nil
@@ -183,7 +304,7 @@ func GetStockPrice(symbol string) (float64, error) {
 		return 0, err
 	}
 
-	if os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED") == "1" {
+	if allowDelayed {
 		delayedPrice, delayedErr := getStooqQuote(symbol)
 		if delayedErr == nil {
 			return delayedPrice, nil
@@ -447,36 +568,52 @@ func writeAlertState(dir string, state map[string]symbolAlertState) error {
 }
 
 func getReminderIntervalFromEnv() time.Duration {
-	interval := strings.TrimSpace(os.Getenv("STOCKS_NOTIFIER_REMINDER_INTERVAL"))
-	if interval == "" {
-		return 0
-	}
-
-	parsed, err := time.ParseDuration(interval)
-	if err != nil || parsed < 0 {
-		log.Printf("Invalid STOCKS_NOTIFIER_REMINDER_INTERVAL value %q, reminders disabled", interval)
-		return 0
-	}
-	return parsed
+	return getDurationWithSetting("STOCKS_NOTIFIER_REMINDER_INTERVAL", appSettings.ReminderInterval, 0)
 }
 
-func getDurationFromEnv(key string, defaultValue time.Duration) time.Duration {
-	raw := strings.TrimSpace(os.Getenv(key))
+func getDurationWithSetting(envKey, settingValue string, defaultValue time.Duration) time.Duration {
+	raw := strings.TrimSpace(os.Getenv(envKey))
+	if raw == "" {
+		raw = strings.TrimSpace(settingValue)
+	}
 	if raw == "" {
 		return defaultValue
 	}
 
 	parsed, err := time.ParseDuration(raw)
-	if err != nil || parsed <= 0 {
-		log.Printf("Invalid %s value %q, using default %s", key, raw, defaultValue)
-		return defaultValue
+	if err != nil || parsed < 0 {
+		if defaultValue > 0 {
+			log.Printf("Invalid %s value %q, using default %s", envKey, raw, defaultValue)
+			return defaultValue
+		}
+		log.Printf("Invalid %s value %q, feature disabled", envKey, raw)
+		return 0
+	}
+	return parsed
+}
+
+func allowDelayedFallbackEnabled() bool {
+	raw := strings.TrimSpace(os.Getenv("STOCKS_NOTIFIER_ALLOW_DELAYED"))
+	if raw == "" {
+		return appSettings.AllowDelayedFallback
 	}
 
-	return parsed
+	switch strings.ToLower(raw) {
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	default:
+		log.Printf("Invalid STOCKS_NOTIFIER_ALLOW_DELAYED value %q, using settings/default", raw)
+		return appSettings.AllowDelayedFallback
+	}
 }
 
 func getNearThresholdPercentFromEnv() float64 {
 	raw := strings.TrimSpace(os.Getenv("STOCKS_NOTIFIER_NEAR_THRESHOLD_PERCENT"))
+	if raw == "" && appSettings.NearThresholdPercent > 0 {
+		return appSettings.NearThresholdPercent
+	}
 	if raw == "" {
 		return defaultNearThresholdPercent
 	}
@@ -577,12 +714,26 @@ func pruneAlertState(alertState map[string]symbolAlertState, rules map[string]Al
 }
 
 func main() {
-
-	dir, error := getDirectoryPath()
-	if error != nil {
-		fmt.Println(error)
+	opts, err := parseCLIOptions()
+	if err != nil {
+		fmt.Println(err)
 		directoryPathHelpMessage()
 	}
+
+	if opts.Web {
+		if err := runWebUI(opts.Dir, opts.Addr); err != nil {
+			log.Fatalf("Failed to start web UI: %v", err)
+		}
+		return
+	}
+
+	dir := opts.Dir
+
+	settings, err := readAppSettings(dir)
+	if err != nil {
+		log.Printf("Failed to read settings file, using defaults/env: %v", err)
+	}
+	appSettings = settings
 
 	alertState, err := readAlertState(dir)
 	if err != nil {
@@ -590,8 +741,8 @@ func main() {
 		alertState = map[string]symbolAlertState{}
 	}
 	reminderInterval := getReminderIntervalFromEnv()
-	basePollInterval := getDurationFromEnv("STOCKS_NOTIFIER_POLL_INTERVAL", defaultPollInterval)
-	nearPollInterval := getDurationFromEnv("STOCKS_NOTIFIER_POLL_NEAR_INTERVAL", defaultNearInterval)
+	basePollInterval := getDurationWithSetting("STOCKS_NOTIFIER_POLL_INTERVAL", appSettings.PollInterval, defaultPollInterval)
+	nearPollInterval := getDurationWithSetting("STOCKS_NOTIFIER_POLL_NEAR_INTERVAL", appSettings.PollNearInterval, defaultNearInterval)
 	nearThresholdPercent := getNearThresholdPercentFromEnv()
 
 	for {
