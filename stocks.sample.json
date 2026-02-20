@@ -1,8 +1,12 @@
 {
     "ICICIBANK.NS": 880,
     "HDFCBANK.NS": 1600,
-    "RELIANCE.NS": 2400,
-    "HDFCNIFETF.NS": 185,
-    "INFY.NS": 1500,
-    "AAPL" : 142
+    "TSLA": {
+        "threshold": 250,
+        "direction": "above"
+    },
+    "AAPL": {
+        "threshold": 180,
+        "direction": "below"
+    }
 }
