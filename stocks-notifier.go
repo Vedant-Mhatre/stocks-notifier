@@ -39,15 +39,66 @@ func directoryPathHelpMessage() {
 	fmt.Println("\nExample stocks.json file:")
 	fmt.Println(strings.TrimSpace(`
 {
-  "ICICIBANK": 880,
-  "HDFCBANK": 1600,
-  "INFY": 1500
+  "TSLA": 220,
+  "AAPL": {
+    "threshold": 250,
+    "direction": "above"
+  }
 }`))
 	fmt.Println("\nCheckout documentation if you need any help: https://blog.vmhatre.com/stocks-notifier/")
 	os.Exit(1)
 }
 
-func readJSONData(dir string) (map[string]float64, error) {
+const (
+	directionBelow = "below"
+	directionAbove = "above"
+)
+
+type AlertRule struct {
+	Threshold float64 `json:"threshold"`
+	Direction string  `json:"direction,omitempty"`
+}
+
+func (rule *AlertRule) normalize() error {
+	rule.Direction = strings.ToLower(strings.TrimSpace(rule.Direction))
+	if rule.Direction == "" {
+		rule.Direction = directionBelow
+	}
+	if rule.Direction != directionBelow && rule.Direction != directionAbove {
+		return fmt.Errorf("unsupported direction %q (supported: %q, %q)", rule.Direction, directionBelow, directionAbove)
+	}
+	return nil
+}
+
+func parseStockRules(rawRules map[string]json.RawMessage) (map[string]AlertRule, error) {
+	rules := make(map[string]AlertRule, len(rawRules))
+
+	for symbol, rawRule := range rawRules {
+		var legacyThreshold float64
+		if err := json.Unmarshal(rawRule, &legacyThreshold); err == nil {
+			rules[symbol] = AlertRule{
+				Threshold: legacyThreshold,
+				Direction: directionBelow,
+			}
+			continue
+		}
+
+		var rule AlertRule
+		if err := json.Unmarshal(rawRule, &rule); err != nil {
+			return nil, fmt.Errorf("invalid rule for %q: expected a number or object: %v", symbol, err)
+		}
+
+		if err := rule.normalize(); err != nil {
+			return nil, fmt.Errorf("invalid rule for %q: %v", symbol, err)
+		}
+
+		rules[symbol] = rule
+	}
+
+	return rules, nil
+}
+
+func readJSONData(dir string) (map[string]AlertRule, error) {
 
 	fullPath := filepath.Join(dir, "stocks.json") //This is required to get platform specific path
 
@@ -62,15 +113,15 @@ func readJSONData(dir string) (map[string]float64, error) {
 
 	decoder := json.NewDecoder(file)
 
-	var data map[string]float64
-	if err := decoder.Decode(&data); err != nil {
+	var rawRules map[string]json.RawMessage
+	if err := decoder.Decode(&rawRules); err != nil {
 		if err == io.EOF {
 			return nil, fmt.Errorf("empty file")
 		}
 		return nil, fmt.Errorf("invalid JSON file: %v", err)
 	}
 
-	return data, nil
+	return parseStockRules(rawRules)
 }
 
 func notify(text string) error {
@@ -140,7 +191,7 @@ const (
 )
 
 var (
-	realtimeFailureCount int
+	realtimeFailureCount  int
 	realtimeDisabledUntil time.Time
 )
 
@@ -320,6 +371,13 @@ func normalizeStooqSymbol(symbol string) string {
 	return strings.ToLower(symbol) + ".us"
 }
 
+func shouldSendAlert(price float64, rule AlertRule) bool {
+	if rule.Direction == directionAbove {
+		return price >= rule.Threshold
+	}
+	return price <= rule.Threshold
+}
+
 func main() {
 
 	dir, error := getDirectoryPath()
@@ -329,7 +387,7 @@ func main() {
 	}
 
 	for {
-		var stocks map[string]float64
+		var stocks map[string]AlertRule
 		stocks, err := readJSONData(dir)
 		if err != nil {
 			if notifyErr := notify(fmt.Sprintf("Error: %v", err)); notifyErr != nil {
@@ -338,7 +396,7 @@ func main() {
 			log.Printf("Error: %v", err)
 		}
 
-		for symbol, alertPrice := range stocks {
+		for symbol, rule := range stocks {
 
 			price, err := GetStockPrice(symbol)
 			if err != nil {
@@ -349,10 +407,10 @@ func main() {
 				continue
 			}
 
-			log.Printf("Price of stock %q: %.2f, Alert is set at %.2f\n", symbol, price, alertPrice)
+			log.Printf("Price of stock %q: %.2f, Alert is set for price %s %.2f\n", symbol, price, rule.Direction, rule.Threshold)
 
-			if price <= alertPrice {
-				alertMessage := fmt.Sprintf("Price of stock %v: %.2f", symbol, price)
+			if shouldSendAlert(price, rule) {
+				alertMessage := fmt.Sprintf("Price of stock %v: %.2f (target %s %.2f)", symbol, price, rule.Direction, rule.Threshold)
 				if notifyErr := notify(alertMessage); notifyErr != nil {
 					log.Printf("Notify error: %v", notifyErr)
 				}

@@ -3,7 +3,7 @@
 [![Release](https://img.shields.io/github/v/release/Vedant-Mhatre/stocks-notifier)](https://github.com/Vedant-Mhatre/stocks-notifier/releases)
 [![Release Workflow](https://github.com/Vedant-Mhatre/stocks-notifier/actions/workflows/release.yml/badge.svg)](https://github.com/Vedant-Mhatre/stocks-notifier/actions/workflows/release.yml)
 
-Stocks Notifier is a privacy-first alert tool that tracks real-time stock prices for a list of stocks and sends notifications when a price is lower than or equal to your threshold.
+Stocks Notifier is a privacy-first alert tool that tracks real-time stock prices for a list of stocks and sends notifications when your alert condition is met.
 
 For docs, visit [blog.vmhatre.com/stocks-notifier/](https://blog.vmhatre.com/stocks-notifier/)
 
@@ -22,7 +22,10 @@ Made by [Vedant Mhatre](https://vmhatre.com/).
 
 * Clone the repo.
 
-* Copy `stocks.sample.json` to `stocks.json` and edit the value to set the lower threshold value at which you want to get alert.
+* Copy `stocks.sample.json` to `stocks.json` and edit your alert rules.
+* Legacy rule format still works: `"AAPL": 180` (alerts when price is `below` 180).
+* Directional rule format: `"TSLA": {"threshold": 250, "direction": "above"}` (alerts when price is `above` 250).
+* Supported directions: `below`, `above`. Direction defaults to `below`.
 
 * By default, this uses the public `stockprices.dev` API for real-time US equities and ETFs. It expects plain US tickers (e.g., `AAPL`, `TSLA`).
 * If your symbol has a suffix (like `.NS`) or is non‑US, set `STOCKS_NOTIFIER_ALLOW_DELAYED=1` to use Stooq (daily close) as a fallback.
