@@ -48,7 +48,9 @@ func directoryPathHelpMessage() {
 	fmt.Println("\nOptional flags:")
 	fmt.Println("  --web           Start local configuration UI")
 	fmt.Println("  --addr=HOST:PORT  Change UI bind address (default 127.0.0.1:8080)")
-	fmt.Println("\nCheckout documentation if you need any help: https://blog.vmhatre.com/stocks-notifier/")
+	fmt.Println("\nCheckout documentation if you need any help:")
+	fmt.Println("- https://blog.vmhatre.com/stocks-notifier/")
+	fmt.Println("- https://github.com/Vedant-Mhatre/stocks-notifier")
 	os.Exit(1)
 }
 

@@ -5,7 +5,12 @@
 
 Stocks Notifier is a privacy-first alert tool that tracks real-time stock prices for a list of stocks and sends notifications when your alert condition is met.
 
-For docs, visit [blog.vmhatre.com/stocks-notifier/](https://blog.vmhatre.com/stocks-notifier/)
+No signup. No API key setup. Zero tracking. Data stays local.
+
+If this saves you setup time, consider starring the repo.
+
+For docs, visit [blog.vmhatre.com/stocks-notifier/](https://blog.vmhatre.com/stocks-notifier/).  
+Fallback docs: [GitHub repository](https://github.com/Vedant-Mhatre/stocks-notifier).
 
 ### Status
 
@@ -13,40 +18,73 @@ This repo is active and working for real-time US tickers via `stockprices.dev`, 
 
 Made by [Vedant Mhatre](https://vmhatre.com/).
 
+### Why this
+
+* Privacy-first: runs locally and does not collect your data.
+* No API-key friction for normal usage.
+* Lightweight: CLI-first with optional local web UI.
+* Practical alerts: supports both `below` and `above` targets.
+
+### Tradeoffs
+
+* Real-time feed is US-focused.
+* Non-US symbols require delayed fallback (`STOCKS_NOTIFIER_ALLOW_DELAYED=1`).
+
+### Roadmap
+
+* Better UI polish and usability for non-technical users.
+* More resilient provider fallback strategy.
+* Smarter error handling and retry/backoff tuning.
+* Broader test coverage for runtime behavior.
+
 ### Data sources
 
 * Real-time (US only): `stockprices.dev` (no signup, public endpoint)
 * Delayed fallback: Stooq daily close when `STOCKS_NOTIFIER_ALLOW_DELAYED=1`
 
-### Running locally
+### Quick start
 
 * Clone the repo.
-
-* Copy `stocks.sample.json` to `stocks.json` and edit your alert rules.
-* Legacy rule format still works: `"AAPL": 180` (alerts when price is `below` 180).
-* Directional rule format: `"TSLA": {"threshold": 250, "direction": "above"}` (alerts when price is `above` 250).
-* Supported directions: `below`, `above`. Direction defaults to `below`.
-* Alert persistence is enabled: notifications are sent when a symbol enters alert state, and repeated alerts are suppressed until the condition clears and triggers again.
-* Optional reminders while condition stays true: set `STOCKS_NOTIFIER_REMINDER_INTERVAL` (example: `2h`). Default is disabled.
-* Adaptive polling:
-  * `STOCKS_NOTIFIER_POLL_INTERVAL` (default `10m`)
-  * `STOCKS_NOTIFIER_POLL_NEAR_INTERVAL` (default `2m`)
-  * `STOCKS_NOTIFIER_NEAR_THRESHOLD_PERCENT` (default `2`)
-
-* By default, this uses the public `stockprices.dev` API for real-time US equities and ETFs. It expects plain US tickers (e.g., `AAPL`, `TSLA`).
-* If your symbol has a suffix (like `.NS`) or is non‑US, set `STOCKS_NOTIFIER_ALLOW_DELAYED=1` to use Stooq (daily close) as a fallback.
-* You can also run the local config UI and avoid manual JSON/env editing:
-  * `go run . . --web`
-  * Open `http://127.0.0.1:8080`
-
+* Copy `stocks.sample.json` to `stocks.json`.
 * Run from source: `go run . .`
-Pass the directory where stocks.json is located.
+* The `.` argument is the directory containing `stocks.json`.
 
-* If you want to run this file in background:
-``` nohup go run . . & ``` this will output logs to file named nohup.out
+### Rule format
+
+* Legacy format: `"AAPL": 180` (alerts when price is `below` 180).
+* Directional format: `"TSLA": {"threshold": 250, "direction": "above"}`.
+* Supported directions: `below`, `above` (default: `below`).
+
+### Data behavior
+
+* Real-time source (US tickers): `stockprices.dev`.
+* Non-US or suffixed symbols (for example `.NS`) require delayed fallback.
+* Enable delayed fallback: `STOCKS_NOTIFIER_ALLOW_DELAYED=1` (Stooq daily close).
+* Alert state is persisted, so repeated alerts are suppressed while condition stays true.
+* Optional reminder interval while condition stays true: `STOCKS_NOTIFIER_REMINDER_INTERVAL=2h`.
+
+### Polling controls
+
+* `STOCKS_NOTIFIER_POLL_INTERVAL` (default `10m`)
+* `STOCKS_NOTIFIER_POLL_NEAR_INTERVAL` (default `2m`)
+* `STOCKS_NOTIFIER_NEAR_THRESHOLD_PERCENT` (default `2`)
+
+### Optional local UI
+
+* Start UI: `go run . . --web`
+* Open `http://127.0.0.1:8080`
+* Optional bind address: `go run . . --web --addr=0.0.0.0:8080`
+
+### Background run
+
+* `nohup go run . . &` (logs go to `nohup.out`)
 
 ### Testing
 
 ```bash
 go test ./...
 ```
+
+### Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and contribution guidelines.
