@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -97,5 +99,72 @@ func TestShouldSendAlert(t *testing.T) {
 	}
 	if shouldSendAlert(100, AlertRule{Threshold: 110, Direction: directionAbove}) {
 		t.Fatalf("above alert should not trigger when price is lower")
+	}
+}
+
+func TestShouldNotifyOnStateChange(t *testing.T) {
+	state := map[string]bool{}
+
+	if !shouldNotifyOnStateChange("AAPL", true, state) {
+		t.Fatalf("first entry into alert should notify")
+	}
+	if shouldNotifyOnStateChange("AAPL", true, state) {
+		t.Fatalf("same alert state should not notify repeatedly")
+	}
+	if shouldNotifyOnStateChange("AAPL", false, state) {
+		t.Fatalf("exiting alert should not notify")
+	}
+	if !shouldNotifyOnStateChange("AAPL", true, state) {
+		t.Fatalf("re-entering alert should notify again")
+	}
+}
+
+func TestReadWriteAlertState(t *testing.T) {
+	dir := t.TempDir()
+	input := map[string]bool{
+		"AAPL": true,
+		"TSLA": false,
+	}
+
+	if err := writeAlertState(dir, input); err != nil {
+		t.Fatalf("writeAlertState failed: %v", err)
+	}
+
+	output, err := readAlertState(dir)
+	if err != nil {
+		t.Fatalf("readAlertState failed: %v", err)
+	}
+
+	if len(output) != len(input) {
+		t.Fatalf("state length mismatch: got %d want %d", len(output), len(input))
+	}
+	for symbol, expected := range input {
+		if output[symbol] != expected {
+			t.Fatalf("state mismatch for %s: got %v want %v", symbol, output[symbol], expected)
+		}
+	}
+}
+
+func TestReadAlertStateMissingFileReturnsEmpty(t *testing.T) {
+	dir := t.TempDir()
+	state, err := readAlertState(dir)
+	if err != nil {
+		t.Fatalf("readAlertState should not fail for missing file: %v", err)
+	}
+	if len(state) != 0 {
+		t.Fatalf("expected empty state for missing file, got: %#v", state)
+	}
+}
+
+func TestReadAlertStateInvalidJSON(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, alertStateFile)
+	if err := os.WriteFile(path, []byte("{"), 0644); err != nil {
+		t.Fatalf("failed to write invalid state file: %v", err)
+	}
+
+	_, err := readAlertState(dir)
+	if err == nil {
+		t.Fatalf("expected invalid JSON error")
 	}
 }

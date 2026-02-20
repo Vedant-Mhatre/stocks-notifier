@@ -52,6 +52,7 @@ func directoryPathHelpMessage() {
 const (
 	directionBelow = "below"
 	directionAbove = "above"
+	alertStateFile = ".stocks-notifier-state.json"
 )
 
 type AlertRule struct {
@@ -378,12 +379,79 @@ func shouldSendAlert(price float64, rule AlertRule) bool {
 	return price <= rule.Threshold
 }
 
+func readAlertState(dir string) (map[string]bool, error) {
+	fullPath := filepath.Join(dir, alertStateFile)
+	file, err := os.Open(fullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return map[string]bool{}, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	var state map[string]bool
+	if err := json.NewDecoder(file).Decode(&state); err != nil {
+		if err == io.EOF {
+			return map[string]bool{}, nil
+		}
+		return nil, fmt.Errorf("invalid alert state file: %v", err)
+	}
+	if state == nil {
+		state = map[string]bool{}
+	}
+	return state, nil
+}
+
+func writeAlertState(dir string, state map[string]bool) error {
+	fullPath := filepath.Join(dir, alertStateFile)
+	tmpPath := fullPath + ".tmp"
+
+	tmpFile, err := os.Create(tmpPath)
+	if err != nil {
+		return err
+	}
+
+	enc := json.NewEncoder(tmpFile)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(state); err != nil {
+		_ = tmpFile.Close()
+		return err
+	}
+
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpPath, fullPath)
+}
+
+func shouldNotifyOnStateChange(symbol string, inAlert bool, alertState map[string]bool) bool {
+	wasInAlert := alertState[symbol]
+	alertState[symbol] = inAlert
+	return inAlert && !wasInAlert
+}
+
+func pruneAlertState(alertState map[string]bool, rules map[string]AlertRule) {
+	for symbol := range alertState {
+		if _, exists := rules[symbol]; !exists {
+			delete(alertState, symbol)
+		}
+	}
+}
+
 func main() {
 
 	dir, error := getDirectoryPath()
 	if error != nil {
 		fmt.Println(error)
 		directoryPathHelpMessage()
+	}
+
+	alertState, err := readAlertState(dir)
+	if err != nil {
+		log.Printf("Failed to read alert state, starting fresh: %v", err)
+		alertState = map[string]bool{}
 	}
 
 	for {
@@ -409,7 +477,8 @@ func main() {
 
 			log.Printf("Price of stock %q: %.2f, Alert is set for price %s %.2f\n", symbol, price, rule.Direction, rule.Threshold)
 
-			if shouldSendAlert(price, rule) {
+			inAlert := shouldSendAlert(price, rule)
+			if shouldNotifyOnStateChange(symbol, inAlert, alertState) {
 				alertMessage := fmt.Sprintf("Price of stock %v: %.2f (target %s %.2f)", symbol, price, rule.Direction, rule.Threshold)
 				if notifyErr := notify(alertMessage); notifyErr != nil {
 					log.Printf("Notify error: %v", notifyErr)
@@ -419,6 +488,12 @@ func main() {
 			}
 
 		}
+
+		pruneAlertState(alertState, stocks)
+		if err := writeAlertState(dir, alertState); err != nil {
+			log.Printf("Failed to persist alert state: %v", err)
+		}
+
 		log.Printf("Sleeping for 10 minutes")
 		time.Sleep(10 * time.Minute)
 	}
