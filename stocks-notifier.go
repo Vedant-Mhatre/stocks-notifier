@@ -50,9 +50,12 @@ func directoryPathHelpMessage() {
 }
 
 const (
-	directionBelow = "below"
-	directionAbove = "above"
-	alertStateFile = ".stocks-notifier-state.json"
+	directionBelow              = "below"
+	directionAbove              = "above"
+	alertStateFile              = ".stocks-notifier-state.json"
+	defaultPollInterval         = 10 * time.Minute
+	defaultNearInterval         = 2 * time.Minute
+	defaultNearThresholdPercent = 2.0
 )
 
 type symbolAlertState struct {
@@ -457,6 +460,87 @@ func getReminderIntervalFromEnv() time.Duration {
 	return parsed
 }
 
+func getDurationFromEnv(key string, defaultValue time.Duration) time.Duration {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return defaultValue
+	}
+
+	parsed, err := time.ParseDuration(raw)
+	if err != nil || parsed <= 0 {
+		log.Printf("Invalid %s value %q, using default %s", key, raw, defaultValue)
+		return defaultValue
+	}
+
+	return parsed
+}
+
+func getNearThresholdPercentFromEnv() float64 {
+	raw := strings.TrimSpace(os.Getenv("STOCKS_NOTIFIER_NEAR_THRESHOLD_PERCENT"))
+	if raw == "" {
+		return defaultNearThresholdPercent
+	}
+
+	parsed, err := strconv.ParseFloat(raw, 64)
+	if err != nil || parsed <= 0 {
+		log.Printf("Invalid STOCKS_NOTIFIER_NEAR_THRESHOLD_PERCENT value %q, using default %.2f", raw, defaultNearThresholdPercent)
+		return defaultNearThresholdPercent
+	}
+
+	return parsed
+}
+
+func percentDistanceToTrigger(price float64, rule AlertRule) float64 {
+	if rule.Threshold <= 0 {
+		return 100
+	}
+
+	if rule.Direction == directionAbove {
+		if price >= rule.Threshold {
+			return 0
+		}
+		return ((rule.Threshold - price) / rule.Threshold) * 100
+	}
+
+	if price <= rule.Threshold {
+		return 0
+	}
+	return ((price - rule.Threshold) / rule.Threshold) * 100
+}
+
+func determineNextPollInterval(prices map[string]float64, rules map[string]AlertRule, baseInterval, nearInterval time.Duration, nearThresholdPercent float64) (time.Duration, string) {
+	if nearInterval <= 0 {
+		nearInterval = baseInterval
+	}
+	if baseInterval <= 0 {
+		baseInterval = defaultPollInterval
+	}
+	if nearThresholdPercent <= 0 {
+		nearThresholdPercent = defaultNearThresholdPercent
+	}
+
+	if len(prices) == 0 {
+		return baseInterval, "no successful quotes"
+	}
+
+	for symbol, price := range prices {
+		rule, ok := rules[symbol]
+		if !ok {
+			continue
+		}
+
+		if shouldSendAlert(price, rule) {
+			return nearInterval, fmt.Sprintf("%s is in alert condition", symbol)
+		}
+
+		if percentDistanceToTrigger(price, rule) <= nearThresholdPercent {
+			return nearInterval, fmt.Sprintf("%s is near threshold (%.2f%%)", symbol, nearThresholdPercent)
+		}
+	}
+
+	return baseInterval, "all symbols far from threshold"
+}
+
 func shouldNotifyAlert(symbol string, inAlert bool, reminderInterval time.Duration, now time.Time, state map[string]symbolAlertState) bool {
 	current := state[symbol]
 
@@ -506,6 +590,9 @@ func main() {
 		alertState = map[string]symbolAlertState{}
 	}
 	reminderInterval := getReminderIntervalFromEnv()
+	basePollInterval := getDurationFromEnv("STOCKS_NOTIFIER_POLL_INTERVAL", defaultPollInterval)
+	nearPollInterval := getDurationFromEnv("STOCKS_NOTIFIER_POLL_NEAR_INTERVAL", defaultNearInterval)
+	nearThresholdPercent := getNearThresholdPercentFromEnv()
 
 	for {
 		var stocks map[string]AlertRule
@@ -517,6 +604,7 @@ func main() {
 			log.Printf("Error: %v", err)
 		}
 
+		prices := make(map[string]float64, len(stocks))
 		for symbol, rule := range stocks {
 
 			price, err := GetStockPrice(symbol)
@@ -529,6 +617,7 @@ func main() {
 			}
 
 			log.Printf("Price of stock %q: %.2f, Alert is set for price %s %.2f\n", symbol, price, rule.Direction, rule.Threshold)
+			prices[symbol] = price
 
 			inAlert := shouldSendAlert(price, rule)
 			if shouldNotifyAlert(symbol, inAlert, reminderInterval, time.Now(), alertState) {
@@ -547,8 +636,9 @@ func main() {
 			log.Printf("Failed to persist alert state: %v", err)
 		}
 
-		log.Printf("Sleeping for 10 minutes")
-		time.Sleep(10 * time.Minute)
+		sleepFor, reason := determineNextPollInterval(prices, stocks, basePollInterval, nearPollInterval, nearThresholdPercent)
+		log.Printf("Sleeping for %s (%s)", sleepFor, reason)
+		time.Sleep(sleepFor)
 	}
 
 }

@@ -28,6 +28,10 @@ Made by [Vedant Mhatre](https://vmhatre.com/).
 * Supported directions: `below`, `above`. Direction defaults to `below`.
 * Alert persistence is enabled: notifications are sent when a symbol enters alert state, and repeated alerts are suppressed until the condition clears and triggers again.
 * Optional reminders while condition stays true: set `STOCKS_NOTIFIER_REMINDER_INTERVAL` (example: `2h`). Default is disabled.
+* Adaptive polling:
+  * `STOCKS_NOTIFIER_POLL_INTERVAL` (default `10m`)
+  * `STOCKS_NOTIFIER_POLL_NEAR_INTERVAL` (default `2m`)
+  * `STOCKS_NOTIFIER_NEAR_THRESHOLD_PERCENT` (default `2`)
 
 * By default, this uses the public `stockprices.dev` API for real-time US equities and ETFs. It expects plain US tickers (e.g., `AAPL`, `TSLA`).
 * If your symbol has a suffix (like `.NS`) or is non‑US, set `STOCKS_NOTIFIER_ALLOW_DELAYED=1` to use Stooq (daily close) as a fallback.

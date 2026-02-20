@@ -223,3 +223,72 @@ func TestGetReminderIntervalFromEnv(t *testing.T) {
 		t.Fatalf("expected zero interval for invalid env, got: %v", got)
 	}
 }
+
+func TestPercentDistanceToTrigger(t *testing.T) {
+	belowRule := AlertRule{Threshold: 100, Direction: directionBelow}
+	aboveRule := AlertRule{Threshold: 100, Direction: directionAbove}
+
+	if got := percentDistanceToTrigger(95, belowRule); got != 0 {
+		t.Fatalf("expected zero distance when below-rule is already in alert, got: %v", got)
+	}
+	if got := percentDistanceToTrigger(105, belowRule); got != 5 {
+		t.Fatalf("expected 5 percent distance, got: %v", got)
+	}
+	if got := percentDistanceToTrigger(105, aboveRule); got != 0 {
+		t.Fatalf("expected zero distance when above-rule is already in alert, got: %v", got)
+	}
+	if got := percentDistanceToTrigger(95, aboveRule); got != 5 {
+		t.Fatalf("expected 5 percent distance, got: %v", got)
+	}
+}
+
+func TestDetermineNextPollInterval(t *testing.T) {
+	base := 10 * time.Minute
+	near := 2 * time.Minute
+	nearPct := 2.0
+	rules := map[string]AlertRule{
+		"AAPL": {Threshold: 100, Direction: directionBelow},
+	}
+
+	tests := []struct {
+		name         string
+		prices       map[string]float64
+		expect       time.Duration
+		expectReason string
+	}{
+		{
+			name:         "no prices uses base",
+			prices:       map[string]float64{},
+			expect:       base,
+			expectReason: "no successful quotes",
+		},
+		{
+			name:         "in alert uses near",
+			prices:       map[string]float64{"AAPL": 99},
+			expect:       near,
+			expectReason: "AAPL is in alert condition",
+		},
+		{
+			name:         "near threshold uses near",
+			prices:       map[string]float64{"AAPL": 101},
+			expect:       near,
+			expectReason: "AAPL is near threshold (2.00%)",
+		},
+		{
+			name:         "far threshold uses base",
+			prices:       map[string]float64{"AAPL": 110},
+			expect:       base,
+			expectReason: "all symbols far from threshold",
+		},
+	}
+
+	for _, tt := range tests {
+		gotInterval, gotReason := determineNextPollInterval(tt.prices, rules, base, near, nearPct)
+		if gotInterval != tt.expect {
+			t.Fatalf("%s: expected interval %v, got %v", tt.name, tt.expect, gotInterval)
+		}
+		if gotReason != tt.expectReason {
+			t.Fatalf("%s: expected reason %q, got %q", tt.name, tt.expectReason, gotReason)
+		}
+	}
+}
