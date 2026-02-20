@@ -157,23 +157,172 @@ const webUIHTML = `<!doctype html>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Stocks Notifier Config</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 24px; max-width: 980px; }
-    h1, h2 { margin-bottom: 8px; }
-    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    input, select, button { padding: 8px; font-size: 14px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
-    .row label { display: flex; flex-direction: column; gap: 4px; min-width: 220px; }
-    .actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
-    .ok { color: #1b7f2a; }
-    .err { color: #b42318; }
-    .muted { color: #666; font-size: 13px; }
-    code { background: #f5f5f5; padding: 2px 4px; }
+    :root {
+      --bg: #f5f8fd;
+      --card: #ffffff;
+      --line: #d6dfeb;
+      --text: #10243b;
+      --subtle: #5f738a;
+      --brand: #156fd4;
+      --brand-soft: #d9ebff;
+      --ok: #177c3f;
+      --err: #c52828;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 15% 0%, #eaf3ff 0, #f5f8fd 45%, #f8fbff 100%);
+      color: var(--text);
+      font-family: "Segoe UI", "SF Pro Text", "Roboto", sans-serif;
+      line-height: 1.45;
+      padding: 24px 16px 40px;
+    }
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 28px rgba(16, 36, 59, 0.08);
+      padding: 24px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      letter-spacing: -0.02em;
+    }
+    h2 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+    }
+    .muted {
+      color: var(--subtle);
+      font-size: 14px;
+      margin: 0 0 8px;
+    }
+    .chip {
+      display: inline-block;
+      background: var(--brand-soft);
+      color: var(--brand);
+      border: 1px solid #b8d8ff;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 4px 10px;
+      margin-bottom: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    th, td {
+      padding: 10px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+    th {
+      background: #f6faff;
+      color: #27445f;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    tr:last-child td { border-bottom: none; }
+    input, select, button {
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #c8d8ea;
+      padding: 9px 10px;
+      background: #fff;
+      color: var(--text);
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(21, 111, 212, 0.16);
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 8px 0;
+    }
+    .row label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 220px;
+      flex: 1 1 220px;
+    }
+    .row label > span {
+      color: #294966;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 12px rgba(16, 36, 59, 0.12);
+    }
+    #saveBtn, #checkBtn, #addRuleBtn {
+      border-color: #9fc4ee;
+      background: #ecf5ff;
+      color: #0f4f98;
+      font-weight: 600;
+    }
+    #status {
+      min-height: 22px;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+    .ok { color: var(--ok); }
+    .err { color: var(--err); }
+    code {
+      background: #f0f5fb;
+      border: 1px solid #d8e4f3;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 12px;
+    }
+    #checkOutput {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fbfdff;
+      color: #27445f;
+      padding: 12px;
+      min-height: 120px;
+      overflow: auto;
+    }
+    @media (max-width: 760px) {
+      .container { padding: 16px; border-radius: 12px; }
+      h1 { font-size: 24px; }
+      th, td { padding: 8px; }
+      .row label { min-width: 100%; }
+    }
   </style>
 </head>
 <body>
+  <main class="container">
   <h1>Stocks Notifier</h1>
-  <p class="muted">Local configuration UI. Changes are saved to <code>stocks.json</code> and <code>.stocks-notifier-settings.json</code>.</p>
+  <div class="chip">Local Config UI</div>
+  <p class="muted">Changes are saved to <code>stocks.json</code> and <code>.stocks-notifier-settings.json</code>.</p>
 
   <h2>Rules</h2>
   <table id="rulesTable">
@@ -199,6 +348,7 @@ const webUIHTML = `<!doctype html>
   </div>
   <p id="status"></p>
   <pre id="checkOutput"></pre>
+  </main>
 
   <script>
     const tbody = document.querySelector("#rulesTable tbody");
