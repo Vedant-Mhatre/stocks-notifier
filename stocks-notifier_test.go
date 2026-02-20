@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestNormalizeStockpricesSymbol(t *testing.T) {
@@ -102,28 +103,44 @@ func TestShouldSendAlert(t *testing.T) {
 	}
 }
 
-func TestShouldNotifyOnStateChange(t *testing.T) {
-	state := map[string]bool{}
+func TestShouldNotifyAlertStateTransitions(t *testing.T) {
+	state := map[string]symbolAlertState{}
+	now := time.Unix(1_700_000_000, 0)
 
-	if !shouldNotifyOnStateChange("AAPL", true, state) {
+	if !shouldNotifyAlert("AAPL", true, 0, now, state) {
 		t.Fatalf("first entry into alert should notify")
 	}
-	if shouldNotifyOnStateChange("AAPL", true, state) {
-		t.Fatalf("same alert state should not notify repeatedly")
+	if shouldNotifyAlert("AAPL", true, 0, now.Add(time.Minute), state) {
+		t.Fatalf("same alert state should not notify repeatedly when reminders are disabled")
 	}
-	if shouldNotifyOnStateChange("AAPL", false, state) {
+	if shouldNotifyAlert("AAPL", false, 0, now.Add(2*time.Minute), state) {
 		t.Fatalf("exiting alert should not notify")
 	}
-	if !shouldNotifyOnStateChange("AAPL", true, state) {
+	if !shouldNotifyAlert("AAPL", true, 0, now.Add(3*time.Minute), state) {
 		t.Fatalf("re-entering alert should notify again")
+	}
+}
+
+func TestShouldNotifyAlertReminderInterval(t *testing.T) {
+	state := map[string]symbolAlertState{}
+	now := time.Unix(1_700_000_000, 0)
+
+	if !shouldNotifyAlert("AAPL", true, 2*time.Hour, now, state) {
+		t.Fatalf("first entry should notify")
+	}
+	if shouldNotifyAlert("AAPL", true, 2*time.Hour, now.Add(time.Hour), state) {
+		t.Fatalf("should not remind before interval")
+	}
+	if !shouldNotifyAlert("AAPL", true, 2*time.Hour, now.Add(2*time.Hour), state) {
+		t.Fatalf("should remind when interval elapses")
 	}
 }
 
 func TestReadWriteAlertState(t *testing.T) {
 	dir := t.TempDir()
-	input := map[string]bool{
-		"AAPL": true,
-		"TSLA": false,
+	input := map[string]symbolAlertState{
+		"AAPL": {InAlert: true, LastNotifiedUnix: 1_700_000_000},
+		"TSLA": {InAlert: false},
 	}
 
 	if err := writeAlertState(dir, input); err != nil {
@@ -142,6 +159,23 @@ func TestReadWriteAlertState(t *testing.T) {
 		if output[symbol] != expected {
 			t.Fatalf("state mismatch for %s: got %v want %v", symbol, output[symbol], expected)
 		}
+	}
+}
+
+func TestReadAlertStateLegacyFormat(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, alertStateFile)
+	if err := os.WriteFile(path, []byte(`{"AAPL":true,"TSLA":false}`), 0644); err != nil {
+		t.Fatalf("failed to write legacy state file: %v", err)
+	}
+
+	state, err := readAlertState(dir)
+	if err != nil {
+		t.Fatalf("readAlertState failed for legacy format: %v", err)
+	}
+
+	if !state["AAPL"].InAlert || state["TSLA"].InAlert {
+		t.Fatalf("legacy state not parsed correctly: %#v", state)
 	}
 }
 
@@ -166,5 +200,26 @@ func TestReadAlertStateInvalidJSON(t *testing.T) {
 	_, err := readAlertState(dir)
 	if err == nil {
 		t.Fatalf("expected invalid JSON error")
+	}
+}
+
+func TestGetReminderIntervalFromEnv(t *testing.T) {
+	_ = os.Unsetenv("STOCKS_NOTIFIER_REMINDER_INTERVAL")
+	if got := getReminderIntervalFromEnv(); got != 0 {
+		t.Fatalf("expected zero interval when env missing, got: %v", got)
+	}
+
+	if err := os.Setenv("STOCKS_NOTIFIER_REMINDER_INTERVAL", "90m"); err != nil {
+		t.Fatalf("failed setting env: %v", err)
+	}
+	if got := getReminderIntervalFromEnv(); got != 90*time.Minute {
+		t.Fatalf("expected 90m, got: %v", got)
+	}
+
+	if err := os.Setenv("STOCKS_NOTIFIER_REMINDER_INTERVAL", "invalid"); err != nil {
+		t.Fatalf("failed setting env: %v", err)
+	}
+	if got := getReminderIntervalFromEnv(); got != 0 {
+		t.Fatalf("expected zero interval for invalid env, got: %v", got)
 	}
 }

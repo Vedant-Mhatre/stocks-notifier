@@ -55,6 +55,11 @@ const (
 	alertStateFile = ".stocks-notifier-state.json"
 )
 
+type symbolAlertState struct {
+	InAlert          bool  `json:"in_alert"`
+	LastNotifiedUnix int64 `json:"last_notified_unix,omitempty"`
+}
+
 type AlertRule struct {
 	Threshold float64 `json:"threshold"`
 	Direction string  `json:"direction,omitempty"`
@@ -379,31 +384,43 @@ func shouldSendAlert(price float64, rule AlertRule) bool {
 	return price <= rule.Threshold
 }
 
-func readAlertState(dir string) (map[string]bool, error) {
+func readAlertState(dir string) (map[string]symbolAlertState, error) {
 	fullPath := filepath.Join(dir, alertStateFile)
 	file, err := os.Open(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return map[string]bool{}, nil
+			return map[string]symbolAlertState{}, nil
 		}
 		return nil, err
 	}
 	defer file.Close()
 
-	var state map[string]bool
-	if err := json.NewDecoder(file).Decode(&state); err != nil {
+	var raw map[string]json.RawMessage
+	if err := json.NewDecoder(file).Decode(&raw); err != nil {
 		if err == io.EOF {
-			return map[string]bool{}, nil
+			return map[string]symbolAlertState{}, nil
 		}
 		return nil, fmt.Errorf("invalid alert state file: %v", err)
 	}
-	if state == nil {
-		state = map[string]bool{}
+	state := make(map[string]symbolAlertState, len(raw))
+	for symbol, rawValue := range raw {
+		var legacy bool
+		if err := json.Unmarshal(rawValue, &legacy); err == nil {
+			state[symbol] = symbolAlertState{InAlert: legacy}
+			continue
+		}
+
+		var current symbolAlertState
+		if err := json.Unmarshal(rawValue, &current); err != nil {
+			return nil, fmt.Errorf("invalid alert state entry for %q: %v", symbol, err)
+		}
+		state[symbol] = current
 	}
+
 	return state, nil
 }
 
-func writeAlertState(dir string, state map[string]bool) error {
+func writeAlertState(dir string, state map[string]symbolAlertState) error {
 	fullPath := filepath.Join(dir, alertStateFile)
 	tmpPath := fullPath + ".tmp"
 
@@ -426,13 +443,48 @@ func writeAlertState(dir string, state map[string]bool) error {
 	return os.Rename(tmpPath, fullPath)
 }
 
-func shouldNotifyOnStateChange(symbol string, inAlert bool, alertState map[string]bool) bool {
-	wasInAlert := alertState[symbol]
-	alertState[symbol] = inAlert
-	return inAlert && !wasInAlert
+func getReminderIntervalFromEnv() time.Duration {
+	interval := strings.TrimSpace(os.Getenv("STOCKS_NOTIFIER_REMINDER_INTERVAL"))
+	if interval == "" {
+		return 0
+	}
+
+	parsed, err := time.ParseDuration(interval)
+	if err != nil || parsed < 0 {
+		log.Printf("Invalid STOCKS_NOTIFIER_REMINDER_INTERVAL value %q, reminders disabled", interval)
+		return 0
+	}
+	return parsed
 }
 
-func pruneAlertState(alertState map[string]bool, rules map[string]AlertRule) {
+func shouldNotifyAlert(symbol string, inAlert bool, reminderInterval time.Duration, now time.Time, state map[string]symbolAlertState) bool {
+	current := state[symbol]
+
+	if !inAlert {
+		state[symbol] = symbolAlertState{InAlert: false}
+		return false
+	}
+
+	if !current.InAlert {
+		state[symbol] = symbolAlertState{InAlert: true, LastNotifiedUnix: now.Unix()}
+		return true
+	}
+
+	if reminderInterval <= 0 {
+		return false
+	}
+
+	lastNotified := time.Unix(current.LastNotifiedUnix, 0)
+	if current.LastNotifiedUnix == 0 || now.Sub(lastNotified) >= reminderInterval {
+		current.LastNotifiedUnix = now.Unix()
+		state[symbol] = current
+		return true
+	}
+
+	return false
+}
+
+func pruneAlertState(alertState map[string]symbolAlertState, rules map[string]AlertRule) {
 	for symbol := range alertState {
 		if _, exists := rules[symbol]; !exists {
 			delete(alertState, symbol)
@@ -451,8 +503,9 @@ func main() {
 	alertState, err := readAlertState(dir)
 	if err != nil {
 		log.Printf("Failed to read alert state, starting fresh: %v", err)
-		alertState = map[string]bool{}
+		alertState = map[string]symbolAlertState{}
 	}
+	reminderInterval := getReminderIntervalFromEnv()
 
 	for {
 		var stocks map[string]AlertRule
@@ -478,7 +531,7 @@ func main() {
 			log.Printf("Price of stock %q: %.2f, Alert is set for price %s %.2f\n", symbol, price, rule.Direction, rule.Threshold)
 
 			inAlert := shouldSendAlert(price, rule)
-			if shouldNotifyOnStateChange(symbol, inAlert, alertState) {
+			if shouldNotifyAlert(symbol, inAlert, reminderInterval, time.Now(), alertState) {
 				alertMessage := fmt.Sprintf("Price of stock %v: %.2f (target %s %.2f)", symbol, price, rule.Direction, rule.Threshold)
 				if notifyErr := notify(alertMessage); notifyErr != nil {
 					log.Printf("Notify error: %v", notifyErr)
